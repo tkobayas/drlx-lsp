@@ -1,0 +1,4 @@
+rule R1 {
+   var a : /as,
+   do { System.out.println(a == 3.2B);}
+}
