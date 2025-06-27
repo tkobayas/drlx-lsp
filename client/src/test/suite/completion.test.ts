@@ -8,15 +8,7 @@ import * as assert from 'assert';
 import { getDocUri, activate } from './helper';
 
 suite('Completion tests', () => {
-	const docUri = getDocUri('empty.drlx');
-
-	test('Completes "rule" at the beginning', async () => {
-		await testCompletion(docUri, new vscode.Position(0, 0), {
-			items: [
-				{ label: 'rule', kind: vscode.CompletionItemKind.Keyword }
-			]
-		});
-	}).timeout(20000); // increase timeout from the default 2000ms because helper.activate waits 2000ms for server startup
+	const docUri = getDocUri('empty.drl');
 
 	test('Completes "package" at the beginning', async () => {
 		await testCompletion(docUri, new vscode.Position(0, 0), {
@@ -24,7 +16,7 @@ suite('Completion tests', () => {
 				{ label: 'package', kind: vscode.CompletionItemKind.Keyword }
 			]
 		});
-	}).timeout(20000);
+	}).timeout(20000); // increase timeout from the default 2000ms because helper.activate waits 2000ms for server startup
 });
 
 async function testCompletion(

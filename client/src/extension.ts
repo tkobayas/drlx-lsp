@@ -6,16 +6,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import * as net from "net";
 
 // Import the language client, language client options and server options from VSCode language client.
-import {LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo} from 'vscode-languageclient/node';
-
-let client: LanguageClient;
+import {LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo} from 'vscode-languageclient';
+import * as net from "net";
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('on activate, your extension "drlx"....');
-    let serverOptions: ServerOptions | undefined = undefined;
+    console.log('on activate, your extension "drl"....');
+    let serverOptions: ServerOptions  | undefined = undefined;
 
     const DEBUG_MODE = process.env.LSDEBUG;
 
@@ -24,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
     if (DEBUG_MODE === 'true') {
         console.log('Starting in debug mode');
         let connectionInfo = {
-            port: 9926,
+            port: 9925,
             host: "127.0.0.1"
         };
         console.log('connectionInfo ' + connectionInfo);
@@ -36,6 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
                 reader: socket
             };
             return Promise.resolve(result);
+
         };
     } else {
         console.log('Starting without debug');
@@ -52,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         // path to the launcher.jar
-        let serverJar = path.join(__dirname, "..", 'lib', 'drlx-lsp-server-jar-with-dependencies.jar');
+        let serverJar = path.join(__dirname, "..", 'lib', 'drools-lsp-server-jar-with-dependencies.jar');
         if (fs.existsSync(serverJar)) {
             console.log(`${serverJar} exists`);
         } else {
@@ -72,36 +71,26 @@ export function activate(context: vscode.ExtensionContext) {
         console.log('serverOptions ' + serverOptions);
         // Options to control the language client
         let clientOptions: LanguageClientOptions = {
-            // Register the server for drlx documents
-            documentSelector: [{scheme: 'file', language: 'drlx'}],
-            synchronize: {
-                // Notify the server about file changes to '.drlx files contained in the workspace
-                fileEvents: vscode.workspace.createFileSystemWatcher('**/*.drlx')
-            }
+            // Register the server for plain text documents
+            documentSelector: [{scheme: 'file', language: 'drools'}]
         };
         // Create the language client and start the client.
-        client = new LanguageClient('DRLX', 'DRLX Language Server', serverOptions, clientOptions);
-        
-        // Add the client to subscriptions for proper cleanup
-        context.subscriptions.push(client);
-        
-        // Start the client (this returns a Promise<void>)
-        client.start();
+        let languageClient: LanguageClient = new LanguageClient('Drools', 'DRL Language Server', serverOptions, clientOptions);
+        let disposable = languageClient.start();
 
-        console.log('Congratulations, your extension "drlx" is now active!');
+        // Disposables to remove on deactivation.
+        context.subscriptions.push(disposable);
+
+        console.log('Congratulations, your extension "drl" is now active!');
     }
 }
 
 // this method is called when your extension is deactivated
-export function deactivate(): Thenable<void> | undefined {
-    console.log('Your extension "drlx" is now deactivated!');
-    if (!client) {
-        return undefined;
-    }
-    return client.stop();
+export function deactivate() { 
+	console.log('Your extension "drl" is now deactivated!');
 }
 
-function getJavaHome(): string | undefined {
+function getJavaHome() : string | undefined {
 
     let javaHome: string | undefined;
 

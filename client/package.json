@@ -1,74 +1,78 @@
 {
-  "name": "drlx-vscode",
-  "displayName": "DRLX Language Support",
-  "description": "DRLX language support for Visual Studio Code",
-  "version": "0.0.1",
-  "publisher": "drlx",
-  "engines": {
-    "vscode": "^1.74.0"
+  "name": "vscode-extension-drl-editor",
+  "displayName": "DRL Editor",
+  "description": "Edit DRL (Drools Rule Language) files",
+  "publisher": "kie-group",
+  "version": "1.0.0-alpha",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kiegroup/drools-lsp.git"
   },
-  "categories": ["Programming Languages"],
+  "engines": {
+    "vscode": "^1.62.0"
+  },
+  "categories": [
+    "Other"
+  ],
   "activationEvents": [
-    "onLanguage:drlx"
+    "onLanguage:drools"
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "extension.vscode-extension-drl-editor",
+        "title": "DRL"
+      }
+    ],
     "languages": [
       {
-        "id": "drlx",
-        "aliases": ["DRLX", "drlx"],
-        "extensions": [".drlx"],
-        "configuration": "./language.configuration.json"
+        "id": "drools",
+        "aliases": [
+          "Drools Rule Language",
+          "DRL"
+        ],
+        "extensions": [
+          ".drl"
+        ],
+        "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
-        "language": "drlx",
-        "scopeName": "source.drlx",
-        "path": "./syntaxes/drlx.tmLanguage"
+        "language": "drools",
+        "scopeName": "source.drools",
+        "path": "./syntaxes/drl.tmLanguage"
       }
     ],
-    "configuration": {
-      "type": "object",
-      "title": "DRLX configuration",
-      "properties": {
-        "drlx.maxNumberOfProblems": {
-          "scope": "resource",
-          "type": "number",
-          "default": 100,
-          "description": "Controls the maximum number of problems produced by the server."
-        },
-        "drlx.trace.server": {
-          "scope": "window",
-          "type": "string",
-          "enum": ["off", "messages", "verbose"],
-          "default": "off",
-          "description": "Traces the communication between VS Code and the language server."
-        }
-      }
-    }
+    "javaExtensions": [
+      "./lib/drools-lsp-server-jar-with-dependencies.jar"
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "pack:dev": "npm run compile && vsce package --no-dependencies -o ./dist/",
-    "publish": "vsce publish"
+    "pack:dev": "mkdir ./dist; vsce package --githubBranch main -o ./dist/"
   },
   "devDependencies": {
-    "@types/vscode": "^1.74.0",
-    "@types/glob": "^8.0.0",
-    "@types/mocha": "^10.0.1",
-    "@types/node": "16.x",
-    "@vscode/test-electron": "^2.1.5",
-    "@vscode/vsce": "^2.15.0",
-    "glob": "^8.0.3",
-    "mocha": "^10.1.0",
-    "typescript": "^4.9.4"
+    "@types/glob": "^7.1.4",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "14.x",
+    "@types/vscode": "^1.62.0",
+    "@typescript-eslint/eslint-plugin": "^5.1.0",
+    "@typescript-eslint/parser": "^5.1.0",
+    "@vscode/test-electron": "^1.6.2",
+    "@vscode/vsce": "^2.19.0",
+    "eslint": "^8.1.0",
+    "glob": "^7.1.7",
+    "mocha": "^11.2.2",
+    "typescript": "^4.4.4"
   },
   "dependencies": {
-    "vscode-languageclient": "^8.1.0"
+    "vscode-languageclient": "5.1.1"
   }
 }
