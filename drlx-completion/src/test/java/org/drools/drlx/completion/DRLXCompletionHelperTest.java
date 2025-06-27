@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.Position;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.drools.drlx.completion.DRLXCompletionHelper.completionItemStrings;
 
 class DRLXCompletionHelperTest {
 
@@ -120,7 +121,5 @@ class DRLXCompletionHelperTest {
         assertThat(item.getKind()).isEqualTo(org.eclipse.lsp4j.CompletionItemKind.Keyword);
     }
 
-    private List<String> completionItemStrings(List<CompletionItem> result) {
-        return result.stream().map(CompletionItem::getInsertText).toList();
-    }
+
 }

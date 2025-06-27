@@ -32,3 +32,5 @@ src/main/antlr4/org/mvel3/parser/antlr4/*.tokens
 /client/node_modules/
 
 client/.vscode-test/
+
+logs/

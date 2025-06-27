@@ -96,4 +96,9 @@ public class DRLXCompletionHelper {
         
         return tokenIndex;
     }
+
+    // convenient method. good for logging or testing
+    public static List<String> completionItemStrings(List<CompletionItem> result) {
+        return result.stream().map(CompletionItem::getInsertText).toList();
+    }
 }

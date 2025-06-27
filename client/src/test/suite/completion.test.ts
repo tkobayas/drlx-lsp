@@ -10,10 +10,10 @@ import { getDocUri, activate } from './helper';
 suite('Completion tests', () => {
 	const docUri = getDocUri('empty.drlx');
 
-	test('Completes "package" at the beginning', async () => {
+	test('Completes "rule" at the beginning', async () => {
 		await testCompletion(docUri, new vscode.Position(0, 0), {
 			items: [
-				{ label: 'package', kind: vscode.CompletionItemKind.Keyword }
+				{ label: 'rule', kind: vscode.CompletionItemKind.Keyword }
 			]
 		});
 	}).timeout(20000); // increase timeout from the default 2000ms because helper.activate waits 2000ms for server startup
@@ -26,12 +26,20 @@ async function testCompletion(
 ) {
 	await activate(docUri);
 
+	// Wait a bit more to ensure server is fully ready
+	await new Promise(resolve => setTimeout(resolve, 1000));
+
 	// Executing the command `vscode.executeCompletionItemProvider` to simulate triggering completion
 	const actualCompletionList = (await vscode.commands.executeCommand(
 		'vscode.executeCompletionItemProvider',
 		docUri,
 		position
 	)) as vscode.CompletionList;
+
+	console.log('actualCompletionList items count: ' + actualCompletionList.items.length);
+	if (actualCompletionList.items.length > 0) {
+		console.log('First few items: ' + actualCompletionList.items.slice(0, 5).map(item => item.label).join(', '));
+	}
 
 	assert.ok(actualCompletionList.items.length >= expectedCompletionList.items.length);
 

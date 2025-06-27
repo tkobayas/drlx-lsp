@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Disable all console output -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+    
+    <!-- File appender -->
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/drlx-lsp-server.log</file>
+        <append>true</append>
+        <immediateFlush>true</immediateFlush>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="FILE" />
+    </root>
+
+    <!-- Package-specific logging levels -->
+    <logger name="org.drools.drlx" level="DEBUG" />
+    
+    <!-- Disable console output for common logging frameworks -->
+    <logger name="org.eclipse" level="INFO" />
+    <logger name="ch.qos.logback" level="WARN" />
+</configuration>

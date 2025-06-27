@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.drools.drlx.completion.DRLXCompletionHelper.completionItemStrings;
 import static org.drools.drlx.lsp.server.TestHelperMethods.getDrlxLspDocumentService;
 
 class DrlxLspDocumentServiceTest {
@@ -25,6 +26,7 @@ class DrlxLspDocumentServiceTest {
         completionParams.setPosition(caretPosition);
 
         List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
+        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).contains("rule", "class", "package"); // top level statement
     }
 
@@ -116,9 +118,5 @@ class DrlxLspDocumentServiceTest {
         completionParams.setPosition(new Position(1, 12));
         List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER");
-    }
-
-    private List<String> completionItemStrings(List<CompletionItem> result) {
-        return result.stream().map(CompletionItem::getInsertText).toList();
     }
 }
