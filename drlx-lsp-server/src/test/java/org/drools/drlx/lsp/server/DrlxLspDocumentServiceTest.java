@@ -25,7 +25,7 @@ class DrlxLspDocumentServiceTest {
         completionParams.setPosition(caretPosition);
 
         List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
-        assertThat(result.stream().map(CompletionItem::getInsertText).anyMatch("rule"::equals)).isTrue();
+        assertThat(completionItemStrings(result)).contains("rule", "class", "package"); // top level statement
     }
 
     @Test
@@ -45,31 +45,29 @@ class DrlxLspDocumentServiceTest {
         // Test completion at beginning of file
         completionParams.setPosition(new Position(0, 0));
         List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
-        assertThat(hasItem(result, "rule")).isTrue();
-        assertThat(hasItem(result, "package")).isTrue();
+        assertThat(completionItemStrings(result)).contains("rule", "class", "package");
 
         // Test completion after 'rule '
         completionParams.setPosition(new Position(0, 5));
         result = drlxLspDocumentService.getCompletionItems(completionParams);
-        assertThat(hasItem(result, "IDENTIFIER")).isTrue();
+        assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER");
 
         // Test completion after 'var '
         completionParams.setPosition(new Position(1, 7));
         result = drlxLspDocumentService.getCompletionItems(completionParams);
-        assertThat(hasItem(result, "IDENTIFIER")).isTrue();
+        assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER");
 
         // Test completion after '/'
         completionParams.setPosition(new Position(1, 12));
         result = drlxLspDocumentService.getCompletionItems(completionParams);
-        assertThat(hasItem(result, "IDENTIFIER")).isTrue();
+        assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER");
 
         // Test completion inside do block
         completionParams.setPosition(new Position(2, 8));
         result = drlxLspDocumentService.getCompletionItems(completionParams);
         assertThat(result).isNotEmpty();
         // Should have Java keywords
-        assertThat(result.stream().map(CompletionItem::getInsertText).anyMatch(s -> 
-            s.equals("int") || s.equals("var") || s.equals("if"))).isTrue();
+        assertThat(completionItemStrings(result)).contains("int", "var", "if");
     }
 
     @Test
@@ -94,12 +92,12 @@ class DrlxLspDocumentServiceTest {
         // Test completion between rules
         completionParams.setPosition(new Position(4, 0));
         List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
-        assertThat(hasItem(result, "rule")).isTrue();
+        assertThat(completionItemStrings(result)).containsOnly("rule");
 
         // Test completion in second rule
         completionParams.setPosition(new Position(6, 7));
         result = drlxLspDocumentService.getCompletionItems(completionParams);
-        assertThat(hasItem(result, "IDENTIFIER")).isTrue();
+        assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER");
     }
 
     @Test
@@ -117,10 +115,10 @@ class DrlxLspDocumentServiceTest {
         // Test completion after incomplete '/'
         completionParams.setPosition(new Position(1, 12));
         List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
-        assertThat(hasItem(result, "IDENTIFIER")).isTrue();
+        assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER");
     }
 
-    private boolean hasItem(List<CompletionItem> result, String text) {
-        return result.stream().map(CompletionItem::getInsertText).anyMatch(text::equals);
+    private List<String> completionItemStrings(List<CompletionItem> result) {
+        return result.stream().map(CompletionItem::getInsertText).toList();
     }
 }
