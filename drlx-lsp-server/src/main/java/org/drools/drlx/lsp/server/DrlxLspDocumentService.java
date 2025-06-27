@@ -99,7 +99,7 @@ public class DrlxLspDocumentService implements TextDocumentService {
 
         List<CompletionItem> completionItems = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
 
-        server.getClient().showMessage(new MessageParams(MessageType.Info, "Position=" + caretPosition));
+        server.getClient().showMessage(new MessageParams(MessageType.Info, "Position=[" + caretPosition.getLine() + "," + caretPosition.getCharacter() + "]"));
         server.getClient().showMessage(new MessageParams(MessageType.Info, "completionItems = " + completionItemStrings(completionItems)));
 
         logger.info("Found {} completion items", completionItems.size());

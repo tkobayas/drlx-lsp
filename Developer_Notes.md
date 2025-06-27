@@ -10,7 +10,7 @@
 
 **Connected remote server - debug**
 1. package server side code with `mvn clean package`
-2. start server with `DroolsLspTCPLauncher` from IDE on debug mode; this will start the LSP-server listening on port `9925`
+2. start server with `DrlxsLspTCPLauncher` from IDE on debug mode; this will start the LSP-server listening on port `9925`
 3. goto `client` directory
 4. issue `npm install`
 5. issue `code .` to start VSCode in that directory
