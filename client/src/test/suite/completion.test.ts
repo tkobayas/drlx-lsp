@@ -8,7 +8,7 @@ import * as assert from 'assert';
 import { getDocUri, activate } from './helper';
 
 suite('Completion tests', () => {
-	const docUri = getDocUri('empty.drl');
+	const docUri = getDocUri('empty.drlx');
 
 	test('Completes "package" at the beginning', async () => {
 		await testCompletion(docUri, new vscode.Position(0, 0), {
