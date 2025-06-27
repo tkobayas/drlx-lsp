@@ -1,13 +1,9 @@
 {
-  "name": "vscode-extension-drl-editor",
-  "displayName": "DRL Editor",
-  "description": "Edit DRL (Drools Rule Language) files",
+  "name": "vscode-extension-drlx-editor",
+  "displayName": "DRLX Editor",
+  "description": "Edit DRLX (Drools Rule Language eXtension) files",
   "publisher": "kie-group",
   "version": "1.0.0-alpha",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/kiegroup/drools-lsp.git"
-  },
   "engines": {
     "vscode": "^1.62.0"
   },
@@ -15,38 +11,38 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:drools"
+    "onLanguage:drlx"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "extension.vscode-extension-drl-editor",
-        "title": "DRL"
+        "command": "extension.vscode-extension-drlx-editor",
+        "title": "DRLX"
       }
     ],
     "languages": [
       {
-        "id": "drools",
+        "id": "drlx",
         "aliases": [
-          "Drools Rule Language",
-          "DRL"
+          "DRLX",
+          "drlx"
         ],
         "extensions": [
-          ".drl"
+          ".drlx"
         ],
         "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
-        "language": "drools",
-        "scopeName": "source.drools",
-        "path": "./syntaxes/drl.tmLanguage"
+        "language": "drlx",
+        "scopeName": "source.drlx",
+        "path": "./syntaxes/drlx.tmLanguage"
       }
     ],
     "javaExtensions": [
-      "./lib/drools-lsp-server-jar-with-dependencies.jar"
+      "./lib/drlx-lsp-server-jar-with-dependencies.jar"
     ]
   },
   "scripts": {

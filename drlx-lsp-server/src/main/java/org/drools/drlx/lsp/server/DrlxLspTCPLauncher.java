@@ -18,7 +18,7 @@ import org.eclipse.lsp4j.services.LanguageClient;
  */
 public class DrlxLspTCPLauncher {
 
-    private static final int PORT = 9926;
+    private static final int PORT = 9925;
     private static final Logger logger = Logger.getLogger(DrlxLspTCPLauncher.class.getSimpleName());
 
     public static void main(String[] args) throws Exception {

@@ -12,7 +12,7 @@ import {LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo} from '
 import * as net from "net";
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('on activate, your extension "drl"....');
+    console.log('on activate, your extension "drlx"....');
     let serverOptions: ServerOptions  | undefined = undefined;
 
     const DEBUG_MODE = process.env.LSDEBUG;
@@ -51,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         // path to the launcher.jar
-        let serverJar = path.join(__dirname, "..", 'lib', 'drools-lsp-server-jar-with-dependencies.jar');
+        let serverJar = path.join(__dirname, "..", 'lib', 'drlx-lsp-server-jar-with-dependencies.jar');
         if (fs.existsSync(serverJar)) {
             console.log(`${serverJar} exists`);
         } else {
@@ -71,23 +71,23 @@ export function activate(context: vscode.ExtensionContext) {
         console.log('serverOptions ' + serverOptions);
         // Options to control the language client
         let clientOptions: LanguageClientOptions = {
-            // Register the server for plain text documents
-            documentSelector: [{scheme: 'file', language: 'drools'}]
+            // Register the server for drlx documents
+            documentSelector: [{scheme: 'file', language: 'drlx'}]
         };
         // Create the language client and start the client.
-        let languageClient: LanguageClient = new LanguageClient('Drools', 'DRL Language Server', serverOptions, clientOptions);
+        let languageClient: LanguageClient = new LanguageClient('DRLX', 'DRLX Language Server', serverOptions, clientOptions);
         let disposable = languageClient.start();
 
         // Disposables to remove on deactivation.
         context.subscriptions.push(disposable);
 
-        console.log('Congratulations, your extension "drl" is now active!');
+        console.log('Congratulations, your extension "drlx" is now active!');
     }
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() { 
-	console.log('Your extension "drl" is now deactivated!');
+	console.log('Your extension "drlx" is now deactivated!');
 }
 
 function getJavaHome() : string | undefined {
