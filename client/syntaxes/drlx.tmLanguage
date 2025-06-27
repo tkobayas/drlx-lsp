@@ -4,10 +4,10 @@
 <dict>
 	<key>fileTypes</key>
 	<array>
-		<string>.drl</string>
+		<string>.drlx</string>
 	</array>
 	<key>name</key>
-	<string>Drools</string>
+	<string>DRLX</string>
 	<key>patterns</key>
 	<array>
 		<dict>
@@ -16,7 +16,7 @@
 			<key>match</key>
 			<string>[&lt;|&gt;|==|&lt;=|&gt;=|.|!=]</string>
 			<key>name</key>
-			<string>keyword.operator.source.drools</string>
+			<string>keyword.operator.source.drlx</string>
 		</dict>
 		<dict>
 			<key>comment</key>
@@ -24,7 +24,7 @@
 			<key>match</key>
 			<string>\b(insert|insertLogical|delete|modify)\b</string>
 			<key>name</key>
-			<string>entity.name.function.source.drools</string>
+			<string>entity.name.function.source.drlx</string>
 		</dict>
 		<dict>
 			<key>comment</key>
@@ -32,7 +32,7 @@
 			<key>match</key>
 			<string>\b(true|false|null)\b</string>
 			<key>name</key>
-			<string>constant.language.source.drools</string>
+			<string>constant.language.source.drlx</string>
 		</dict>
 		<dict>
 			<key>comment</key>
@@ -40,7 +40,7 @@
 			<key>match</key>
 			<string>\b(lock-on-active|date-effective|date-expires|no-loop|auto-focus|activation-group|agenda-group|ruleflow-group|entry-point|duration|package|import|dialect|salience|enabled|attributes|rule|extends|when|then|template|query|declare|function|global|eval|not|in|or|and|exists|forall|accumulate|collect|from|end|over|calendars|init|action|reverse|result|new)\b</string>
 			<key>name</key>
-			<string>keyword.control.source.drools</string>
+			<string>keyword.control.source.drlx</string>
 		</dict>
 		<dict>
 			<key>comment</key>
@@ -48,7 +48,7 @@
 			<key>match</key>
 			<string>\$([A-Za-z][A-Za-z0-9_]+)</string>
 			<key>name</key>
-			<string>variable.parameter.source.drools</string>
+			<string>variable.parameter.source.drlx</string>
 		</dict>
 		<dict>
 			<key>comment</key>
@@ -56,7 +56,7 @@
 			<key>match</key>
 			<string>\b([A-Z][A-Za-z_]+)\b</string>
 			<key>name</key>
-			<string>support.type.source.drools</string>
+			<string>support.type.source.drlx</string>
 		</dict>
 		<dict>
 			<key>comment</key>
@@ -64,7 +64,7 @@
 			<key>match</key>
 			<string>(\/)(\/).*</string>
 			<key>name</key>
-			<string>comment.line.double-slash.source.drools</string>
+			<string>comment.line.double-slash.source.drlx</string>
 		</dict>
 		<dict>
 			<key>begin</key>
@@ -74,7 +74,7 @@
 			<key>end</key>
 			<string>\*/</string>
 			<key>name</key>
-			<string>comment.line.double-slash.source.drools</string>
+			<string>comment.line.double-slash.source.drlx</string>
 		</dict>
 		<dict>
 			<key>comment</key>
@@ -82,7 +82,7 @@
 			<key>match</key>
 			<string>("([^"]|"")*")</string>
 			<key>name</key>
-			<string>string.quoted.double.source.drools</string>
+			<string>string.quoted.double.source.drlx</string>
 		</dict>
 		<dict>
 			<key>comment</key>
@@ -90,11 +90,11 @@
 			<key>match</key>
 			<string>([0-9]+(\.)?[0-9]*)</string>
 			<key>name</key>
-			<string>constant.numeric.source.drools</string>
+			<string>constant.numeric.source.drlx</string>
 		</dict>
 	</array>
 	<key>scopeName</key>
-	<string>source.drools</string>
+	<string>source.drlx</string>
 	<key>uuid</key>
 	<string>a98fc7cc-15d1-401e-bb85-e72714276cdb</string>
 </dict>
