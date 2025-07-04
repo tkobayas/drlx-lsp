@@ -15,7 +15,7 @@ import static org.drools.drlx.completion.DRLXCompletionHelper.completionItemStri
 class DRLXCompletionHelperTest {
 
     @Test
-    void getCompletionItems_testDrlxRule() throws IOException {
+    void getCompletionItems_testDrlxRule() {
         String text = """
                 rule R1 {
                    var a : /as,
@@ -63,29 +63,52 @@ class DRLXCompletionHelperTest {
     }
 
     @Test
-    void getCompletionItems_incompleteRule() {
+    void getCompletionItems_class() {
         String text = """
-                rule R1 {
-                   var a : /
+                public class Foo {
+                    public void bar() {
+                        System.out.println("Hello");
+                    }
+                }
                 """;
 
         Position caretPosition = new Position();
+        List<CompletionItem> result;
+
+        // Test completion at the beginning before 'public'
+        caretPosition.setLine(0);
+        caretPosition.setCharacter(0);
+        result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
+        System.out.println(completionItemStrings(result));
+        assertThat(completionItemStrings(result)).contains("public", "class", "interface", "enum", "rule", "package");
+
+        // Test completion after 'public '
+        caretPosition.setLine(0);
+        caretPosition.setCharacter(7);
+        result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
+        System.out.println(completionItemStrings(result));
+        assertThat(completionItemStrings(result)).contains("class", "interface", "enum", "abstract", "final");
+
+        // Test completion after 'public class '
+        caretPosition.setLine(0);
+        caretPosition.setCharacter(13);
+        result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
+        System.out.println(completionItemStrings(result));
+        assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // class name
+
+        // Test completion inside class body
         caretPosition.setLine(1);
-        caretPosition.setCharacter(12); // After the '/'
-
-        List<CompletionItem> result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
+        caretPosition.setCharacter(4);
+        result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
         System.out.println(completionItemStrings(result));
-        assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // datasource name is IDENTIFIER
-    }
+        assertThat(completionItemStrings(result)).contains("public", "private", "protected", "static", "final", "void", "int");
 
-    @Test
-    void getCompletionItems_emptyInput() {
-        String text = "";
-        Position caretPosition = new Position(0, 0);
-
-        List<CompletionItem> result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
+        // Test completion inside method body
+        caretPosition.setLine(2);
+        caretPosition.setCharacter(8);
+        result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
         System.out.println(completionItemStrings(result));
-        assertThat(completionItemStrings(result)).contains("rule");
+        assertThat(completionItemStrings(result)).contains("int", "var", "if", "for", "while", "return");
     }
 
     @Test
@@ -120,6 +143,4 @@ class DRLXCompletionHelperTest {
         assertThat(item.getInsertText()).isEqualTo("test");
         assertThat(item.getKind()).isEqualTo(org.eclipse.lsp4j.CompletionItemKind.Keyword);
     }
-
-
 }
