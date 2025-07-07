@@ -17,7 +17,6 @@ class DRLXCompletionHelperIncompleteCodeTest {
         Position caretPosition = new Position(0, 0);
 
         List<CompletionItem> result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).contains("rule");
     }
 
@@ -33,7 +32,6 @@ class DRLXCompletionHelperIncompleteCodeTest {
         caretPosition.setCharacter(12); // After the '/'
 
         List<CompletionItem> result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // datasource name is IDENTIFIER
     }
 
@@ -52,7 +50,6 @@ class DRLXCompletionHelperIncompleteCodeTest {
         caretPosition.setLine(2);
         caretPosition.setCharacter(15);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
-        assertThat(completionItemStrings(result)).contains("out", "in", "gc"); // System fields, methods
+        assertThat(completionItemStrings(result)).contains("out", "in", "gc()"); // System fields, methods
     }
 }

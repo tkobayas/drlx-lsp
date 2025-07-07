@@ -2,11 +2,18 @@ package org.drools.drlx.completion;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.resolution.declarations.ResolvedFieldDeclaration;
+import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
+import com.github.javaparser.resolution.types.ResolvedReferenceType;
+import com.github.javaparser.resolution.types.ResolvedType;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.vmware.antlr4c3.CodeCompletionCore;
@@ -20,8 +27,12 @@ import org.drools.drlx.parser.TolerantDRLXToJavaParserVisitor;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.Position;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DRLXCompletionHelper {
+
+    private static final Logger logger = LoggerFactory.getLogger(DRLXCompletionHelper.class);
 
     private static final Set<Integer> PREFERRED_RULES = Set.of(
             DRLXParser.RULE_identifier
@@ -50,6 +61,8 @@ public class DRLXCompletionHelper {
         CodeCompletionCore core = new CodeCompletionCore(parser, PREFERRED_RULES, Tokens.IGNORED);
         CodeCompletionCore.CandidatesCollection candidates = core.collectCandidates(caretTokenIndex, null);
 
+        logger.info("getCompletionItems: candidates = {}", candidates);
+
         if (isMajorIdentifierRule(candidates)) {
             return createSemanticCompletions(parser, parseTree, caretTokenIndex);
         }
@@ -63,13 +76,21 @@ public class DRLXCompletionHelper {
     }
 
     private static List<CompletionItem> createSemanticCompletions(DRLXParser parser, ParseTree parseTree, int caretTokenIndex) {
+
+        logger.info("createSemanticCompletions");
+
         List<CompletionItem> semanticItems = new ArrayList<>();
+
+//        System.out.println("caretTokenIndex: " + caretTokenIndex + " , caretTokenText: [" + parser.getTokenStream().get(caretTokenIndex).getText() + "]");
+//        System.out.println("previousTokenText: [" + parser.getTokenStream().get(caretTokenIndex - 1).getText() + "]");
+//        System.out.println("scopeTokenText: [" + parser.getTokenStream().get(caretTokenIndex - 2).getText() + "]");
 
         // caret is waiting on completion, check a previous token
         int previousTokenIndex = caretTokenIndex - 1;
 
         Token token = parser.getTokenStream().get(previousTokenIndex);
-        System.out.println("Token at index " + previousTokenIndex + ": text => [" + token.getText() + "] , type => " + token.getType() + " , line => " + token.getLine() + " , col => " + token.getCharPositionInLine());
+
+        logger.info("previousToken : [" + token.getText() + "]");
 
         if (token.getType() == DRLXLexer.DOT) {
             // Let's assume the user is typing a method or field access
@@ -78,14 +99,31 @@ public class DRLXCompletionHelper {
             // Find the parse tree node at the scope token index
             ParseTree targetNode = findNodeAtTokenIndex(parseTree, scopeTokenIndex);
 
-            System.out.println("Target scope node at index " + scopeTokenIndex + ": " + targetNode.getClass() + " , text => [" + targetNode.getText() + "]");
-
             TolerantDRLXToJavaParserVisitor visitor = new TolerantDRLXToJavaParserVisitor();
             CompilationUnit compilationUnit = (CompilationUnit) visitor.visit(parseTree);
 
             ReflectionTypeSolver typeSolver = new ReflectionTypeSolver(false);
             JavaSymbolSolver solver = new JavaSymbolSolver(typeSolver);
             solver.inject(compilationUnit);
+
+            Map<Integer, Node> tokenIdJPNodeMap = visitor.getTokenIdJPNodeMap();
+            Expression scopeNode = (Expression) tokenIdJPNodeMap.get(scopeTokenIndex);
+            if (scopeNode == null) {
+                logger.info("scopeNode is null");
+            } else {
+                logger.info("scopeNode: " + scopeNode.getClass() + " , text => [" + scopeNode.toString() + "]");
+            }
+
+            if (scopeNode != null) {
+                //System.out.println("Scope node: " + scopeNode.getClass() + " , text => [" + scopeNode.toString() + "]");
+                // Use the symbol solver to resolve the scope node
+                ResolvedType resolvedType = scopeNode.calculateResolvedType();
+
+                // Populate semantic items with the resolved type's fields and methods
+                semanticItems.addAll(createTypeBasedCompletions(resolvedType));
+            } else {
+                //System.out.println("No scope node found for index: " + scopeTokenIndex);
+            }
         }
 
         if (semanticItems.isEmpty()) {
@@ -190,6 +228,102 @@ public class DRLXCompletionHelper {
         }
 
         return tokenIndex;
+    }
+
+    /**
+     * Create completion items based on the resolved type's members
+     */
+    private static List<CompletionItem> createTypeBasedCompletions(ResolvedType resolvedType) {
+        List<CompletionItem> items = new ArrayList<>();
+
+        try {
+            if (resolvedType.isReferenceType()) {
+                ResolvedReferenceType referenceType = resolvedType.asReferenceType();
+
+                // Add accessible fields
+                for (ResolvedFieldDeclaration field : referenceType.getAllFieldsVisibleToInheritors()) {
+                    if (isAccessible(field)) {
+                        CompletionItem item = createCompletionItem(field.getName(), CompletionItemKind.Field);
+                        item.setDetail(field.getType().describe());
+                        items.add(item);
+                    }
+                }
+
+                // Add accessible methods
+                for (ResolvedMethodDeclaration method : referenceType.getAllMethods()) {
+                    if (isAccessible(method) && !method.getName().startsWith("$")) { // Skip synthetic methods
+                        CompletionItem item = createCompletionItem(method.getName(), CompletionItemKind.Method);
+
+                        // Create method signature for detail
+                        StringBuilder signature = new StringBuilder();
+                        signature.append(method.getReturnType().describe()).append(" ");
+                        signature.append(method.getName()).append("(");
+
+                        for (int i = 0; i < method.getNumberOfParams(); i++) {
+                            if (i > 0) {
+                                signature.append(", ");
+                            }
+                            signature.append(method.getParam(i).getType().describe());
+                            signature.append(" ").append(method.getParam(i).getName());
+                        }
+                        signature.append(")");
+
+                        item.setDetail(signature.toString());
+
+                        // Create insert text with parentheses for methods
+                        if (method.getNumberOfParams() == 0) {
+                            item.setInsertText(method.getName() + "()");
+                        } else {
+                            item.setInsertText(method.getName() + "($0)"); // $0 is cursor position for snippet
+                        }
+
+                        items.add(item);
+                    }
+                }
+
+                // Add static members if it's a class type
+                // Note: Check if it's a class using getTypeDeclaration()
+                // For now, focusing on instance members
+
+            } else if (resolvedType.isPrimitive()) {
+                // Primitive types don't have accessible members in Java
+                // Could add boxing type members here if needed
+            } else if (resolvedType.isArray()) {
+                // Array types have length field and some methods
+                items.add(createCompletionItem("length", CompletionItemKind.Field));
+            }
+        } catch (Exception e) {
+            // Handle resolution errors gracefully
+            System.err.println("Error resolving type members: " + e.getMessage());
+        }
+
+        return items;
+    }
+
+    /**
+     * Check if a field is accessible (public or package-private)
+     */
+    private static boolean isAccessible(ResolvedFieldDeclaration field) {
+        try {
+            // JavaParser doesn't expose accessibility directly for resolved declarations
+            // For now, assume all fields are accessible (they're already filtered by getAllFieldsVisibleToInheritors)
+            return true;
+        } catch (Exception e) {
+            return true; // Default to accessible if we can't determine
+        }
+    }
+
+    /**
+     * Check if a method is accessible (public or package-private)
+     */
+    private static boolean isAccessible(ResolvedMethodDeclaration method) {
+        try {
+            // JavaParser doesn't expose accessibility directly for resolved declarations
+            // For now, assume all methods are accessible (they're already filtered by getAllMethods)
+            return true;
+        } catch (Exception e) {
+            return true; // Default to accessible if we can't determine
+        }
     }
 
     // convenient method. good for logging or testing
