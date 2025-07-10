@@ -1,8 +1,5 @@
 package org.drools.drlx.completion;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 import org.eclipse.lsp4j.CompletionItem;
@@ -15,11 +12,13 @@ import static org.drools.drlx.completion.DRLXCompletionHelper.completionItemStri
 class DRLXCompletionHelperTest {
 
     @Test
-    void getCompletionItems_testDrlxRule() {
+    void testRuleDeclaration() {
         String text = """
-                rule R1 {
-                   var a : /as,
-                   do { System.out.println(a == 3.2B);}
+                class Foo {
+                    rule R1 {
+                       var a : /as,
+                       do { System.out.println(a == 3.2B);}
+                    }
                 }
                 """;
 
@@ -30,40 +29,41 @@ class DRLXCompletionHelperTest {
         caretPosition.setLine(0);
         caretPosition.setCharacter(0);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
-        assertThat(completionItemStrings(result)).contains("rule", "class", "package"); // top level statement
+        assertThat(completionItemStrings(result)).contains("package", "import", "class"); // top level statement
+
+        // Test completion before 'rule '
+        caretPosition.setLine(1);
+        caretPosition.setCharacter(4);
+        result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("rule");
 
         // Test completion after 'rule '
-        caretPosition.setLine(0);
-        caretPosition.setCharacter(5);
+        caretPosition.setLine(1);
+        caretPosition.setCharacter(9);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // rule name is IDENTIFIER
 
         // Test completion in the middle of pattern - position after 'var a : /'
-        caretPosition.setLine(1);
-        caretPosition.setCharacter(12);
+        caretPosition.setLine(2);
+        caretPosition.setCharacter(16);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // datasource name is IDENTIFIER
 
         // Test completion after 'var '
-        caretPosition.setLine(1);
-        caretPosition.setCharacter(7);
+        caretPosition.setLine(2);
+        caretPosition.setCharacter(11);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // variable name is IDENTIFIER
 
         // Test completion inside consequence block
-        caretPosition.setLine(2);
-        caretPosition.setCharacter(8);
+        caretPosition.setLine(3);
+        caretPosition.setCharacter(12);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).contains("int", "var", "if"); // any java expressions
     }
 
     @Test
-    void getCompletionItems_class() {
+    void testClassDeclaration() {
         String text = """
                 public class Foo {
                     public void bar() {
@@ -79,64 +79,60 @@ class DRLXCompletionHelperTest {
         caretPosition.setLine(0);
         caretPosition.setCharacter(0);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
-        assertThat(completionItemStrings(result)).contains("public", "class", "interface", "enum", "rule", "package");
+        assertThat(completionItemStrings(result)).contains("public", "class", "interface", "enum", "package");
 
         // Test completion after 'public '
         caretPosition.setLine(0);
         caretPosition.setCharacter(7);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).contains("class", "interface", "enum", "abstract", "final");
 
         // Test completion after 'public class '
         caretPosition.setLine(0);
         caretPosition.setCharacter(13);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // class name
 
         // Test completion inside class body
         caretPosition.setLine(1);
         caretPosition.setCharacter(4);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).contains("public", "private", "protected", "static", "final", "void", "int");
 
         // Test completion inside method body
         caretPosition.setLine(2);
         caretPosition.setCharacter(8);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).contains("int", "var", "if", "for", "while", "return");
     }
 
     @Test
-    void getCompletionItems_multipleRules() {
+    void multipleRules() {
         String text = """
-                rule R1 {
-                   var a : /as,
-                   do { System.out.println(a);}
-                }
-                
-                rule R2 {
-                   var b : /bs,
-                   do { System.out.println(b);}
+                class Foo {
+                    rule R1 {
+                       var a : /as,
+                       do { System.out.println(a);}
+                    }
+                    
+                    rule R2 {
+                       var b : /bs,
+                       do { System.out.println(b);}
+                    }
                 }
                 """;
 
         Position caretPosition = new Position();
         
         // Test completion at the start of second rule
-        caretPosition.setLine(5);
+        caretPosition.setLine(6);
         caretPosition.setCharacter(0);
         List<CompletionItem> result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        System.out.println(completionItemStrings(result));
         assertThat(completionItemStrings(result)).contains("rule");
     }
 
     @Test
-    void createCompletionItem_test() {
+    void testCreateCompletionItem() {
         CompletionItem item = DRLXCompletionHelper.createCompletionItem("test", org.eclipse.lsp4j.CompletionItemKind.Keyword);
         
         assertThat(item.getLabel()).isEqualTo("test");

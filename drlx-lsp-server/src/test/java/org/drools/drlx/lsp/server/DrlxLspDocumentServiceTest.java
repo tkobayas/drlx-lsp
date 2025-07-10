@@ -15,7 +15,7 @@ import static org.drools.drlx.lsp.server.TestHelperMethods.getDrlxLspDocumentSer
 class DrlxLspDocumentServiceTest {
 
     @Test
-    void getCompletionItems() {
+    void getCompletionItems_emptyText() {
         DrlxLspDocumentService drlxLspDocumentService = getDrlxLspDocumentService("");
 
         CompletionParams completionParams = new CompletionParams();
@@ -26,16 +26,17 @@ class DrlxLspDocumentServiceTest {
         completionParams.setPosition(caretPosition);
 
         List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
-        System.out.println(completionItemStrings(result));
-        assertThat(completionItemStrings(result)).contains("rule", "class", "package"); // top level statement
+        assertThat(completionItemStrings(result)).contains("package", "import", "class"); // top level statement
     }
 
     @Test
     void getCompletionItems_drlxRule() {
         String drlx = """
-                rule R1 {
-                   var a : /as,
-                   do { System.out.println(a == 3.2B);}
+                class Foo {
+                    rule R1 {
+                        var a : /as,
+                        do { System.out.println(a == 3.2B);}
+                    }
                 }
                 """;
 
@@ -47,25 +48,25 @@ class DrlxLspDocumentServiceTest {
         // Test completion at beginning of file
         completionParams.setPosition(new Position(0, 0));
         List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
-        assertThat(completionItemStrings(result)).contains("rule", "class", "package");
+        assertThat(completionItemStrings(result)).contains("package", "import", "class");
 
         // Test completion after 'rule '
-        completionParams.setPosition(new Position(0, 5));
+        completionParams.setPosition(new Position(1, 9));
         result = drlxLspDocumentService.getCompletionItems(completionParams);
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER");
 
         // Test completion after 'var '
-        completionParams.setPosition(new Position(1, 7));
+        completionParams.setPosition(new Position(2, 12));
         result = drlxLspDocumentService.getCompletionItems(completionParams);
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER");
 
         // Test completion after '/'
-        completionParams.setPosition(new Position(1, 12));
+        completionParams.setPosition(new Position(2, 17));
         result = drlxLspDocumentService.getCompletionItems(completionParams);
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER");
 
         // Test completion inside do block
-        completionParams.setPosition(new Position(2, 8));
+        completionParams.setPosition(new Position(3, 12));
         result = drlxLspDocumentService.getCompletionItems(completionParams);
         assertThat(result).isNotEmpty();
         // Should have Java keywords
@@ -75,14 +76,16 @@ class DrlxLspDocumentServiceTest {
     @Test
     void getCompletionItems_multipleRules() {
         String drlx = """
-                rule R1 {
-                   var a : /as,
-                   do { System.out.println(a);}
-                }
-                
-                rule R2 {
-                   var b : /bs,
-                   do { System.out.println(b);}
+                class Foo {
+                    rule R1 {
+                        var a : /as,
+                        do { System.out.println(a);}
+                    }
+                    
+                    rule R2 {
+                        var b : /bs,
+                        do { System.out.println(b);}
+                    }
                 }
                 """;
 
@@ -92,12 +95,12 @@ class DrlxLspDocumentServiceTest {
         completionParams.setTextDocument(new TextDocumentIdentifier("myDocument"));
 
         // Test completion between rules
-        completionParams.setPosition(new Position(4, 0));
+        completionParams.setPosition(new Position(5, 0));
         List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
-        assertThat(completionItemStrings(result)).containsOnly("rule");
+        assertThat(completionItemStrings(result)).contains("rule");
 
         // Test completion in second rule
-        completionParams.setPosition(new Position(6, 7));
+        completionParams.setPosition(new Position(7, 17));
         result = drlxLspDocumentService.getCompletionItems(completionParams);
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER");
     }
@@ -105,8 +108,9 @@ class DrlxLspDocumentServiceTest {
     @Test
     void getCompletionItems_incompleteRule() {
         String drlx = """
-                rule R1 {
-                   var a : /
+                class Foo {
+                    rule R1 {
+                        var a : /
                 """;
 
         DrlxLspDocumentService drlxLspDocumentService = getDrlxLspDocumentService(drlx);
@@ -115,7 +119,7 @@ class DrlxLspDocumentServiceTest {
         completionParams.setTextDocument(new TextDocumentIdentifier("myDocument"));
         
         // Test completion after incomplete '/'
-        completionParams.setPosition(new Position(1, 12));
+        completionParams.setPosition(new Position(2, 17));
         List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER");
     }
