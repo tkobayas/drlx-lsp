@@ -37,7 +37,7 @@ class DRLXCompletionHelperIncompleteCodeTest {
     }
 
     @Test
-    void incompleteRule_consequence() {
+    void incompleteRule_consequence_System() {
         String text = """
                 class Foo {
                     rule R1 {
@@ -51,6 +51,23 @@ class DRLXCompletionHelperIncompleteCodeTest {
 
         List<CompletionItem> result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("out", "in", "gc()"); // System fields, methods
+    }
+
+    @Test
+    void incompleteRule_consequence_SystemOut() {
+        String text = """
+                class Foo {
+                    rule R1 {
+                        var a : /as,
+                        do { System.out.
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(3);
+        caretPosition.setCharacter(24); // After the 'System.out.'
+
+        List<CompletionItem> result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("println($0)"); // System.out fields, methods
     }
 
     @Test

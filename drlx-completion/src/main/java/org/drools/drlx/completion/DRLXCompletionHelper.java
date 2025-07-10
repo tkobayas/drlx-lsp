@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.github.javaparser.ast.AccessSpecifier;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
@@ -15,6 +16,8 @@ import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.github.javaparser.resolution.types.ResolvedType;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
+import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionFieldDeclaration;
+import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionMethodDeclaration;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.vmware.antlr4c3.CodeCompletionCore;
 import org.antlr.v4.runtime.ANTLRInputStream;
@@ -81,10 +84,6 @@ public class DRLXCompletionHelper {
 
         List<CompletionItem> semanticItems = new ArrayList<>();
 
-//        System.out.println("caretTokenIndex: " + caretTokenIndex + " , caretTokenText: [" + parser.getTokenStream().get(caretTokenIndex).getText() + "]");
-//        System.out.println("previousTokenText: [" + parser.getTokenStream().get(caretTokenIndex - 1).getText() + "]");
-//        System.out.println("scopeTokenText: [" + parser.getTokenStream().get(caretTokenIndex - 2).getText() + "]");
-
         // caret is waiting on completion, check a previous token
         int previousTokenIndex = caretTokenIndex - 1;
 
@@ -112,17 +111,12 @@ public class DRLXCompletionHelper {
                 logger.info("scopeNode is null");
             } else {
                 logger.info("scopeNode: " + scopeNode.getClass() + " , text => [" + scopeNode.toString() + "]");
-            }
 
-            if (scopeNode != null) {
-                //System.out.println("Scope node: " + scopeNode.getClass() + " , text => [" + scopeNode.toString() + "]");
                 // Use the symbol solver to resolve the scope node
                 ResolvedType resolvedType = scopeNode.calculateResolvedType();
 
                 // Populate semantic items with the resolved type's fields and methods
                 semanticItems.addAll(createTypeBasedCompletions(resolvedType));
-            } else {
-                //System.out.println("No scope node found for index: " + scopeTokenIndex);
             }
         }
 
@@ -301,12 +295,14 @@ public class DRLXCompletionHelper {
     }
 
     /**
-     * Check if a field is accessible (public or package-private)
+     * Check if a field is accessible (public)
      */
     private static boolean isAccessible(ResolvedFieldDeclaration field) {
         try {
-            // JavaParser doesn't expose accessibility directly for resolved declarations
-            // For now, assume all fields are accessible (they're already filtered by getAllFieldsVisibleToInheritors)
+            if (field instanceof ReflectionFieldDeclaration reflectionField) {
+                AccessSpecifier accessSpecifier = reflectionField.accessSpecifier();
+                return accessSpecifier == AccessSpecifier.PUBLIC;
+            }
             return true;
         } catch (Exception e) {
             return true; // Default to accessible if we can't determine
@@ -314,12 +310,14 @@ public class DRLXCompletionHelper {
     }
 
     /**
-     * Check if a method is accessible (public or package-private)
+     * Check if a method is accessible (public)
      */
     private static boolean isAccessible(ResolvedMethodDeclaration method) {
         try {
-            // JavaParser doesn't expose accessibility directly for resolved declarations
-            // For now, assume all methods are accessible (they're already filtered by getAllMethods)
+            if (method instanceof ReflectionMethodDeclaration reflectionMethod) {
+                AccessSpecifier accessSpecifier = reflectionMethod.accessSpecifier();
+                return accessSpecifier == AccessSpecifier.PUBLIC;
+            }
             return true;
         } catch (Exception e) {
             return true; // Default to accessible if we can't determine
