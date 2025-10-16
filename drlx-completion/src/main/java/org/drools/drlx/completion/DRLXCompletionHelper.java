@@ -244,36 +244,13 @@ public class DRLXCompletionHelper {
                 }
 
                 // Add accessible methods
-                for (ResolvedMethodDeclaration method : referenceType.getAllMethods()) {
-                    if (isAccessible(method) && !method.getName().startsWith("$")) { // Skip synthetic methods
-                        CompletionItem item = createCompletionItem(method.getName(), CompletionItemKind.Method);
-
-                        // Create method signature for detail
-                        StringBuilder signature = new StringBuilder();
-                        signature.append(method.getReturnType().describe()).append(" ");
-                        signature.append(method.getName()).append("(");
-
-                        for (int i = 0; i < method.getNumberOfParams(); i++) {
-                            if (i > 0) {
-                                signature.append(", ");
-                            }
-                            signature.append(method.getParam(i).getType().describe());
-                            signature.append(" ").append(method.getParam(i).getName());
-                        }
-                        signature.append(")");
-
-                        item.setDetail(signature.toString());
-
-                        // Create insert text with parentheses for methods
-                        if (method.getNumberOfParams() == 0) {
-                            item.setInsertText(method.getName() + "()");
-                        } else {
-                            item.setInsertText(method.getName() + "($0)"); // $0 is cursor position for snippet
-                        }
-
-                        items.add(item);
-                    }
-                }
+                referenceType.getAllMethods().stream()
+                        .filter(method -> isAccessible(method))
+                        .filter(method -> !method.getName().startsWith("$")) // Skip synthetic methods
+                        .map(method -> method.getName())
+                        .distinct()
+                        // TODO: We may add detail and modify insertText, but for now keep it simple
+                        .forEach(methodName -> items.add(createCompletionItem(methodName, CompletionItemKind.Method)));
 
                 // Add static members if it's a class type
                 // Note: Check if it's a class using getTypeDeclaration()

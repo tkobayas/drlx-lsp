@@ -50,7 +50,7 @@ class DRLXCompletionHelperIncompleteCodeTest {
         caretPosition.setCharacter(20); // After the 'System.'
 
         List<CompletionItem> result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        assertThat(completionItemStrings(result)).contains("out", "in", "gc()"); // System fields, methods
+        assertThat(completionItemStrings(result)).contains("out", "in", "gc"); // System fields, methods
     }
 
     @Test
@@ -67,7 +67,7 @@ class DRLXCompletionHelperIncompleteCodeTest {
         caretPosition.setCharacter(24); // After the 'System.out.'
 
         List<CompletionItem> result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        assertThat(completionItemStrings(result)).contains("println($0)"); // System.out fields, methods
+        assertThat(completionItemStrings(result)).contains("println"); // System.out fields, methods
     }
 
     @Test
@@ -85,6 +85,6 @@ class DRLXCompletionHelperIncompleteCodeTest {
         caretPosition.setLine(2);
         caretPosition.setCharacter(15);
         result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
-        assertThat(completionItemStrings(result)).contains("out", "in", "gc()"); // System fields, methods
+        assertThat(completionItemStrings(result)).contains("out", "in", "gc"); // System fields, methods
     }
 }
