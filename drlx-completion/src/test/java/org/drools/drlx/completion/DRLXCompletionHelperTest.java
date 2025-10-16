@@ -139,4 +139,26 @@ class DRLXCompletionHelperTest {
         assertThat(item.getInsertText()).isEqualTo("test");
         assertThat(item.getKind()).isEqualTo(org.eclipse.lsp4j.CompletionItemKind.Keyword);
     }
+
+    @Test
+    void testInlineCast() {
+        String text = """
+                import java.util.ArrayList;
+                
+                class Foo {
+                    rule R1 {
+                       var a : /as,
+                       do { list#ArrayList#.
+                """;
+
+        Position caretPosition = new Position();
+        List<CompletionItem> result;
+
+        // Test completion after 'list#ArrayList#.'
+        caretPosition.setLine(5);
+        caretPosition.setCharacter(28);
+        result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("trimToSize");
+        assertThat(completionItemStrings(result)).doesNotContain("removeRange"); // 'removeRange' is a protected method, so not included in suggestions
+    }
 }

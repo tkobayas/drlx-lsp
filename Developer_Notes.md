@@ -26,3 +26,12 @@ npm install
 npm run pack:dev
 ```
 vsix file will be generated in `dist` directory.
+
+## Run tests
+For server-side tests, run `mvn test` in the root directory.
+
+For client-side tests, goto `client` directory and run:
+```bash
+npm install
+npm test
+```
