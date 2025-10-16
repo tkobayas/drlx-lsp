@@ -8,10 +8,10 @@ import * as assert from 'assert';
 import { getDocUri, activate } from './helper';
 
 suite('Completion tests', () => {
-	const docUri = getDocUri('empty.drlx');
+	const docUri = getDocUri('incomplete.drlx');
 
-	test('Completes "rule" at the beginning', async () => {
-		await testCompletion(docUri, new vscode.Position(0, 0), {
+	test('Completes "rule" inside class', async () => {
+		await testCompletion(docUri, new vscode.Position(1, 2), {
 			items: [
 				{ label: 'rule', kind: vscode.CompletionItemKind.Keyword }
 			]
