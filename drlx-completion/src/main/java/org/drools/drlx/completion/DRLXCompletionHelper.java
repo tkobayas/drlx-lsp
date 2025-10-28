@@ -11,6 +11,7 @@ import com.github.javaparser.ast.AccessSpecifier;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.resolution.TypeSolver;
 import com.github.javaparser.resolution.declarations.ResolvedFieldDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
@@ -19,6 +20,7 @@ import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionFieldDeclaration;
 import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionMethodDeclaration;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.TypeSolverBuilder;
 import com.vmware.antlr4c3.CodeCompletionCore;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -95,13 +97,15 @@ public class DRLXCompletionHelper {
             // Let's assume the user is typing a method or field access
             int scopeTokenIndex = previousTokenIndex - 1;
 
-            // Find the parse tree node at the scope token index
-            ParseTree targetNode = findNodeAtTokenIndex(parseTree, scopeTokenIndex);
-
             TolerantDRLXToJavaParserVisitor visitor = new TolerantDRLXToJavaParserVisitor();
             CompilationUnit compilationUnit = (CompilationUnit) visitor.visit(parseTree);
 
-            ReflectionTypeSolver typeSolver = new ReflectionTypeSolver(false);
+            // We can adjust the paths for the vscode project where the user is working (e.g. dependencies by pom.xml)
+            TypeSolver typeSolver = new TypeSolverBuilder()
+                    .withCurrentClassloader() // equivalent to ReflectionTypeSolver
+                    .withSourceCode("src/main/java") // project source code
+                    .build();
+
             JavaSymbolSolver solver = new JavaSymbolSolver(typeSolver);
             solver.inject(compilationUnit);
 
@@ -124,49 +128,6 @@ public class DRLXCompletionHelper {
             semanticItems.add(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
         }
         return semanticItems;
-    }
-
-    private static ParseTree findNodeAtTokenIndex(ParseTree node, int targetTokenIndex) {
-        if (node instanceof org.antlr.v4.runtime.tree.TerminalNode) {
-            org.antlr.v4.runtime.tree.TerminalNode terminal = (org.antlr.v4.runtime.tree.TerminalNode) node;
-            Token token = terminal.getSymbol();
-            return token.getTokenIndex() == targetTokenIndex ? node : null;
-        }
-
-        if (node instanceof org.antlr.v4.runtime.ParserRuleContext) {
-            org.antlr.v4.runtime.ParserRuleContext ruleContext = (org.antlr.v4.runtime.ParserRuleContext) node;
-
-            // Early pruning: check if target token is within this node's range
-            if (!isTokenInRange(ruleContext, targetTokenIndex)) {
-                return null;
-            }
-
-            // Find the most specific (deepest) node containing the target token
-            ParseTree mostSpecificMatch = null;
-
-            // Optimized child traversal - only check children that could contain the target
-            for (int i = 0; i < node.getChildCount(); i++) {
-                ParseTree child = node.getChild(i);
-
-                // Pre-filter: skip children that can't contain the target token
-                if (child instanceof org.antlr.v4.runtime.ParserRuleContext) {
-                    if (!isTokenInRange((org.antlr.v4.runtime.ParserRuleContext) child, targetTokenIndex)) {
-                        continue; // Skip this child entirely
-                    }
-                }
-
-                ParseTree result = findNodeAtTokenIndex(child, targetTokenIndex);
-                if (result != null) {
-                    mostSpecificMatch = result;
-                    // Continue searching to find the most specific match
-                }
-            }
-
-            // Return the most specific match, or this node if no child matched
-            return mostSpecificMatch != null ? mostSpecificMatch : node;
-        }
-
-        return null;
     }
 
     /**
