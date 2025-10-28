@@ -252,6 +252,9 @@ public class DRLXCompletionHelper {
                         // TODO: We may add detail and modify insertText, but for now keep it simple
                         .forEach(methodName -> items.add(createCompletionItem(methodName, CompletionItemKind.Method)));
 
+                // Add direct property access for getters/setters. mvel syntax sugar
+                addDirectPropertyAccess(items);
+
                 // Add static members if it's a class type
                 // Note: Check if it's a class using getTypeDeclaration()
                 // For now, focusing on instance members
@@ -269,6 +272,25 @@ public class DRLXCompletionHelper {
         }
 
         return items;
+    }
+
+    private static void addDirectPropertyAccess(List<CompletionItem> items) {
+        // if items contain getXxx or isXxx methods, add xxx as a property access like a public field
+        Set<CompletionItem> propertyNames = items.stream()
+                .filter(item -> item.getKind() == CompletionItemKind.Method)
+                .map(CompletionItem::getInsertText)
+                .filter(name -> name.startsWith("get") || name.startsWith("is"))
+                .map(name -> {
+                    if (name.startsWith("get")) {
+                        return name.substring(3, 4).toLowerCase() + name.substring(4);
+                    } else {
+                        return name.substring(2, 3).toLowerCase() + name.substring(3);
+                    }
+                })
+                .map(propName -> createCompletionItem(propName, CompletionItemKind.Field))
+                .collect(Collectors.toSet());
+
+        items.addAll(propertyNames);
     }
 
     /**

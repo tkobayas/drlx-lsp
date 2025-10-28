@@ -110,4 +110,47 @@ class DRLXCompletionHelperIncompleteCodeTest {
         assertThat(completionItemStrings(result)).doesNotContain("removeRange"); // 'removeRange' is a protected method, so not included in suggestions
 
     }
+
+    @Test
+    void incompleteClass_BigDecimalLiteral() {
+        String text = """
+                class Foo {
+                    rule R1 {
+                       var a : /as,
+                       do { 10.5B.
+                """;
+
+        Position caretPosition = new Position();
+        List<CompletionItem> result;
+
+        // Test completion after '10.5B..'
+        caretPosition.setLine(3);
+        caretPosition.setCharacter(18);
+        result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("precision");
+    }
+
+    @Test
+    void incompleteClass_PropertyAccessor() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+                
+                class Foo {
+                    rule R1 {
+                        var a : /as,
+                        do {
+                            Person p = new Person("John", new Address("Tokyo"));
+                            p.address.
+                """;
+
+        Position caretPosition = new Position();
+        List<CompletionItem> result;
+
+        // Test completion after '10.5B..'
+        caretPosition.setLine(8);
+        caretPosition.setCharacter(22);
+        result = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("city", "getCity", "setCity"); // `city` can be directly accessed in mvel
+    }
 }
