@@ -9,7 +9,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.drools.drlx.completion.DRLXCompletionHelper.completionItemStrings;
+import static org.drools.drlx.completion.DrlxCompletionHelper.completionItemStrings;
 import static org.drools.drlx.lsp.server.TestHelperMethods.getDrlxLspDocumentService;
 
 class DrlxLspDocumentServiceTest {

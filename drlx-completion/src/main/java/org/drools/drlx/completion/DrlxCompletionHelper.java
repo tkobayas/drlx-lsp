@@ -19,39 +19,38 @@ import com.github.javaparser.resolution.types.ResolvedType;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionFieldDeclaration;
 import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionMethodDeclaration;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.TypeSolverBuilder;
 import com.vmware.antlr4c3.CodeCompletionCore;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.drools.drlx.parser.DRLXLexer;
-import org.drools.drlx.parser.DRLXParser;
-import org.drools.drlx.parser.TolerantDRLXToJavaParserVisitor;
+import org.drools.drlx.parser.DrlxLexer;
+import org.drools.drlx.parser.DrlxParser;
+import org.drools.drlx.parser.TolerantDrlxToJavaParserVisitor;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.Position;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DRLXCompletionHelper {
+public class DrlxCompletionHelper {
 
-    private static final Logger logger = LoggerFactory.getLogger(DRLXCompletionHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(DrlxCompletionHelper.class);
 
     private static final Set<Integer> PREFERRED_RULES = Set.of(
-            DRLXParser.RULE_identifier
+            DrlxParser.RULE_identifier
     );
 
     private static final Set<Integer> MINOR_IDENTIFIER_RULES = Set.of(
-            DRLXParser.RULE_altAnnotationQualifiedName
+            DrlxParser.RULE_altAnnotationQualifiedName
     );
 
-    private DRLXCompletionHelper() {
+    private DrlxCompletionHelper() {
     }
 
     public static List<CompletionItem> getCompletionItems(String text, Position caretPosition) {
-        DRLXParser parser = createDrlxParser(text);
+        DrlxParser parser = createDrlxParser(text);
 
         int row = caretPosition == null ? -1 : caretPosition.getLine() + 1;
         int col = caretPosition == null ? -1 : caretPosition.getCharacter();
@@ -62,7 +61,7 @@ public class DRLXCompletionHelper {
         return getCompletionItems(parser, caretTokenIndex, parseTree);
     }
 
-    static List<CompletionItem> getCompletionItems(DRLXParser parser, int caretTokenIndex, ParseTree parseTree) {
+    static List<CompletionItem> getCompletionItems(DrlxParser parser, int caretTokenIndex, ParseTree parseTree) {
         CodeCompletionCore core = new CodeCompletionCore(parser, PREFERRED_RULES, Tokens.IGNORED);
         CodeCompletionCore.CandidatesCollection candidates = core.collectCandidates(caretTokenIndex, null);
 
@@ -80,7 +79,7 @@ public class DRLXCompletionHelper {
                 .collect(Collectors.toList());
     }
 
-    private static List<CompletionItem> createSemanticCompletions(DRLXParser parser, ParseTree parseTree, int caretTokenIndex) {
+    private static List<CompletionItem> createSemanticCompletions(DrlxParser parser, ParseTree parseTree, int caretTokenIndex) {
 
         logger.info("createSemanticCompletions");
 
@@ -93,11 +92,11 @@ public class DRLXCompletionHelper {
 
         logger.info("previousToken : [" + token.getText() + "]");
 
-        if (token.getType() == DRLXLexer.DOT) {
+        if (token.getType() == DrlxLexer.DOT) {
             // Let's assume the user is typing a method or field access
             int scopeTokenIndex = previousTokenIndex - 1;
 
-            TolerantDRLXToJavaParserVisitor visitor = new TolerantDRLXToJavaParserVisitor();
+            TolerantDrlxToJavaParserVisitor visitor = new TolerantDrlxToJavaParserVisitor();
             CompilationUnit compilationUnit = (CompilationUnit) visitor.visit(parseTree);
 
             // We can adjust the paths for the vscode project where the user is working (e.g. dependencies by pom.xml)
@@ -148,7 +147,7 @@ public class DRLXCompletionHelper {
     }
 
     private static boolean isMajorIdentifierRule(CodeCompletionCore.CandidatesCollection candidates) {
-        List<Integer> ruleStack = candidates.rules.get(DRLXParser.RULE_identifier);
+        List<Integer> ruleStack = candidates.rules.get(DrlxParser.RULE_identifier);
         if (ruleStack == null || ruleStack.isEmpty()) {
             return false; // not identifier rule
         }
@@ -164,14 +163,14 @@ public class DRLXCompletionHelper {
         return completionItem;
     }
 
-    private static DRLXParser createDrlxParser(String text) {
+    private static DrlxParser createDrlxParser(String text) {
         ANTLRInputStream input = new ANTLRInputStream(text);
-        DRLXLexer lexer = new DRLXLexer(input);
+        DrlxLexer lexer = new DrlxLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        return new DRLXParser(tokens);
+        return new DrlxParser(tokens);
     }
 
-    private static Integer computeTokenIndex(DRLXParser parser, int row, int col) {
+    private static Integer computeTokenIndex(DrlxParser parser, int row, int col) {
         CommonTokenStream tokens = (CommonTokenStream) parser.getTokenStream();
         int tokenIndex = 0;
 

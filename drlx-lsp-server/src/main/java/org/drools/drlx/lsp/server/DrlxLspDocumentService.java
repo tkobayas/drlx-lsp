@@ -7,7 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-import org.drools.drlx.completion.DRLXCompletionHelper;
+import org.drools.drlx.completion.DrlxCompletionHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.eclipse.lsp4j.CompletionItem;
@@ -25,7 +25,7 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
-import static org.drools.drlx.completion.DRLXCompletionHelper.completionItemStrings;
+import static org.drools.drlx.completion.DrlxCompletionHelper.completionItemStrings;
 
 public class DrlxLspDocumentService implements TextDocumentService {
 
@@ -55,7 +55,7 @@ public class DrlxLspDocumentService implements TextDocumentService {
     }
 
     private List<Diagnostic> validate() {
-        // TODO: Implement DRLX validation
+        // TODO: Implement Drlx validation
         return Collections.emptyList();
     }
 
@@ -97,7 +97,7 @@ public class DrlxLspDocumentService implements TextDocumentService {
         logger.info("Completion requested for {} at position {}:{}", uri, caretPosition.getLine(), caretPosition.getCharacter());
         logger.debug("Document text length: {}", text != null ? text.length() : 0);
 
-        List<CompletionItem> completionItems = DRLXCompletionHelper.getCompletionItems(text, caretPosition);
+        List<CompletionItem> completionItems = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
 
         server.getClient().showMessage(new MessageParams(MessageType.Info, "Position=[" + caretPosition.getLine() + "," + caretPosition.getCharacter() + "]"));
         server.getClient().showMessage(new MessageParams(MessageType.Info, "completionItems = " + completionItemStrings(completionItems)));
