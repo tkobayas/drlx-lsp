@@ -22,7 +22,7 @@
 ## Build DRLX Editor Extension for VSCode
 Under `client` directory, run:
 ```bash
-npm install
+npm ci
 npm run pack:dev
 ```
 vsix file will be generated in `dist` directory.
@@ -32,6 +32,6 @@ For server-side tests, run `mvn test` in the root directory.
 
 For client-side tests, goto `client` directory and run:
 ```bash
-npm install
+npm ci
 npm test
 ```
