@@ -11,7 +11,7 @@ suite('Completion tests', () => {
 	const docUri = getDocUri('incomplete.drlx');
 
 	test('Completes "rule" inside class', async () => {
-		await testCompletion(docUri, new vscode.Position(1, 2), {
+		await testCompletion(docUri, new vscode.Position(1, 0), {
 			items: [
 				{ label: 'rule', kind: vscode.CompletionItemKind.Keyword }
 			]
