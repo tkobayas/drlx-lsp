@@ -7,7 +7,7 @@ target/
 /nbproject
 /*.ipr
 /*.iws
-/*.iml
+*.iml
 
 # Eclipse files
 /.classpath
@@ -34,3 +34,10 @@ src/main/antlr4/org/mvel3/parser/antlr4/*.tokens
 client/.vscode-test/
 
 logs/
+
+CLAUDE.md
+.claude/
+
+
+
+HANDOFF.md
