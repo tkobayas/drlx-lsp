@@ -1,6 +1,7 @@
 package org.drools.drlx.completion;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -67,16 +68,23 @@ public class DrlxCompletionHelper {
 
         logger.info("getCompletionItems: candidates = {}", candidates);
 
-        if (isMajorIdentifierRule(candidates)) {
-            return createSemanticCompletions(parser, parseTree, caretTokenIndex);
-        }
+        List<CompletionItem> items = new ArrayList<>();
 
-        return candidates.tokens.keySet().stream()
+        // 1. Always: keyword completions from candidates.tokens
+        candidates.tokens.keySet().stream()
                 .filter(Objects::nonNull)
                 .map(integer -> parser.getVocabulary().getDisplayName(integer).replace("'", ""))
                 .map(String::toLowerCase)
                 .map(k -> createCompletionItem(k, CompletionItemKind.Keyword))
-                .collect(Collectors.toList());
+                .forEach(items::add);
+
+        // 2. Additionally: semantic completions when identifier rule applies
+        if (isMajorIdentifierRule(candidates)) {
+            items.addAll(createSemanticCompletions(parser, parseTree, caretTokenIndex));
+        }
+
+        // 3. Deduplicate by (insertText, kind)
+        return deduplicateItems(items);
     }
 
     private static List<CompletionItem> createSemanticCompletions(DrlxParser parser, ParseTree parseTree, int caretTokenIndex) {
@@ -153,6 +161,18 @@ public class DrlxCompletionHelper {
         }
         Integer lastRule = ruleStack.get(ruleStack.size() - 1);
         return !MINOR_IDENTIFIER_RULES.contains(lastRule);
+    }
+
+    private static List<CompletionItem> deduplicateItems(List<CompletionItem> items) {
+        Set<String> seen = new HashSet<>();
+        List<CompletionItem> result = new ArrayList<>();
+        for (CompletionItem item : items) {
+            String key = item.getInsertText() + "::" + item.getKind();
+            if (seen.add(key)) {
+                result.add(item);
+            }
+        }
+        return result;
     }
 
     static CompletionItem createCompletionItem(String label, CompletionItemKind itemKind) {

@@ -13,12 +13,10 @@ import static org.drools.drlx.completion.DrlxCompletionHelper.completionItemStri
  * Tests for code completion with new drlx-parser constructs.
  *
  * Scope: keyword token auto-discovery by antlr4-c3.
- * Semantic completions (TolerantDrlxToJavaParserVisitor) are out of scope — see issue #5.
+ * Semantic completions (TolerantDrlxToJavaParserVisitor) are out of scope.
  *
- * Note: inside rule body, the grammar offers both keyword tokens (not, exists, if, match, etc.)
- * AND identifier rules (for boundOopath). The current code routes to semantic completions
- * when RULE_identifier is a candidate, so keyword tokens are not surfaced at those positions.
- * This is a known limitation to be addressed by issue #5.
+ * Completion is additive: keyword tokens and semantic completions (IDENTIFIER)
+ * are both surfaced when the grammar offers both at a given position.
  */
 class DrlxCompletionHelperNewConstructsTest {
 
@@ -96,6 +94,62 @@ class DrlxCompletionHelperNewConstructsTest {
         Position caret = new Position(2, 12);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).containsOnly("IDENTIFIER");
+    }
+
+    // --- Additive completion: keywords + IDENTIFIER at rule-item-start ---
+
+    @Test
+    void ruleItemStart_keywordsAndIdentifierBothOffered() {
+        String text = """
+                class Foo {
+                    rule R1 {
+                        var a : /persons,
+
+                    }
+                }
+                """;
+
+        // caret: empty line after first pattern — new rule item position
+        Position caret = new Position(3, 8);
+        List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
+        assertThat(items).contains("not", "exists", "and", "or", "test", "if", "match", "do", "var");
+        assertThat(items).contains("IDENTIFIER");
+    }
+
+    @Test
+    void ruleItemStart_emptyRuleBody() {
+        String text = """
+                class Foo {
+                    rule R1 {
+
+                    }
+                }
+                """;
+
+        // caret: empty rule body — first rule item position
+        Position caret = new Position(2, 8);
+        List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
+        assertThat(items).contains("not", "exists", "do", "var");
+        assertThat(items).contains("IDENTIFIER");
+    }
+
+    @Test
+    void ruleItemStart_beforeNotElement() {
+        String text = """
+                class Foo {
+                    rule R1 {
+                        var a : /persons,
+                        not /orders,
+                        do { System.out.println(a); }
+                    }
+                }
+                """;
+
+        // caret: |not /orders, — rule item start where CE keywords should appear
+        Position caret = new Position(3, 8);
+        List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
+        assertThat(items).contains("not", "exists", "if", "match", "do");
+        assertThat(items).contains("IDENTIFIER");
     }
 
     // --- test element ---
