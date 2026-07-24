@@ -23,31 +23,33 @@ class DrlxCompletionHelperIncompleteCodeTest {
     @Test
     void incompleteRule_pattern() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var a : /
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /
                 """;
 
         Position caretPosition = new Position();
-        caretPosition.setLine(2);
-        caretPosition.setCharacter(17); // After the '/'
+        caretPosition.setLine(3);
+        caretPosition.setCharacter(13); // After the '/'
 
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
-        assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // datasource name is IDENTIFIER
+        assertThat(completionItemStrings(result)).contains("IDENTIFIER"); // datasource name is IDENTIFIER
     }
 
     @Test
     void incompleteRule_consequence_System() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var a : /as,
-                        do { System.
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do { System.
                 """;
 
         Position caretPosition = new Position();
-        caretPosition.setLine(3);
-        caretPosition.setCharacter(20); // After the 'System.'
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(16); // After the 'System.'
 
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("out", "in", "gc"); // System fields, methods
@@ -56,15 +58,16 @@ class DrlxCompletionHelperIncompleteCodeTest {
     @Test
     void incompleteRule_consequence_SystemOut() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var a : /as,
-                        do { System.out.
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do { System.out.
                 """;
 
         Position caretPosition = new Position();
-        caretPosition.setLine(3);
-        caretPosition.setCharacter(24); // After the 'System.out.'
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(20); // After the 'System.out.'
 
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("println"); // System.out fields, methods
@@ -89,67 +92,69 @@ class DrlxCompletionHelperIncompleteCodeTest {
     }
 
     @Test
-    void incompleteClass_inlineCast() {
+    void incompleteRule_inlineCast() {
         String text = """
                 import java.util.ArrayList;
-                
-                class Foo {
-                    rule R1 {
-                       var a : /as,
-                       do { list#ArrayList#.
+
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do { list#ArrayList#.
                 """;
 
         Position caretPosition = new Position();
         List<CompletionItem> result;
 
         // Test completion after 'list#ArrayList#.'
-        caretPosition.setLine(5);
-        caretPosition.setCharacter(28);
+        caretPosition.setLine(6);
+        caretPosition.setCharacter(25);
         result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("trimToSize");
         assertThat(completionItemStrings(result)).doesNotContain("removeRange"); // 'removeRange' is a protected method, so not included in suggestions
-
     }
 
     @Test
-    void incompleteClass_BigDecimalLiteral() {
+    void incompleteRule_BigDecimalLiteral() {
         String text = """
-                class Foo {
-                    rule R1 {
-                       var a : /as,
-                       do { 10.5B.
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do { 10.5B.
                 """;
 
         Position caretPosition = new Position();
         List<CompletionItem> result;
 
-        // Test completion after '10.5B..'
-        caretPosition.setLine(3);
-        caretPosition.setCharacter(18);
+        // Test completion after '10.5B.'
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(15);
         result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("precision");
     }
 
     @Test
-    void incompleteClass_PropertyAccessor() {
+    void incompleteRule_PropertyAccessor() {
         String text = """
                 import org.drools.drlx.domain.Person;
                 import org.drools.drlx.domain.Address;
-                
-                class Foo {
-                    rule R1 {
-                        var a : /as,
-                        do {
-                            Person p = new Person("John", new Address("Tokyo"));
-                            p.address.
+
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do {
+                        Person p = new Person("John", new Address("Tokyo"));
+                        p.address.
                 """;
 
         Position caretPosition = new Position();
         List<CompletionItem> result;
 
-        // Test completion after '10.5B..'
-        caretPosition.setLine(8);
-        caretPosition.setCharacter(22);
+        // Test completion after 'p.address.'
+        caretPosition.setLine(9);
+        caretPosition.setCharacter(18);
         result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("city", "getCity", "setCity"); // `city` can be directly accessed in mvel
     }

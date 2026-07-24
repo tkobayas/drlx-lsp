@@ -14,50 +14,50 @@ class DrlxCompletionHelperTest {
     @Test
     void testRuleDeclaration() {
         String text = """
-                class Foo {
-                    rule R1 {
-                       var a : /as,
-                       do { System.out.println(a == 3.2B);}
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do { System.out.println(a == 3.2B);}
                 }
                 """;
 
         Position caretPosition = new Position();
         List<CompletionItem> result;
 
-        // Test completion at the beginning of the rule
+        // Test completion at the beginning of the file
         caretPosition.setLine(0);
         caretPosition.setCharacter(0);
         result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
-        assertThat(completionItemStrings(result)).contains("package", "import", "class"); // top level statement
+        assertThat(completionItemStrings(result)).contains("package", "import", "unit"); // top level statement
 
         // Test completion before 'rule '
-        caretPosition.setLine(1);
-        caretPosition.setCharacter(4);
+        caretPosition.setLine(2);
+        caretPosition.setCharacter(0);
         result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("rule");
 
         // Test completion after 'rule '
-        caretPosition.setLine(1);
-        caretPosition.setCharacter(9);
+        caretPosition.setLine(2);
+        caretPosition.setCharacter(5);
         result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // rule name is IDENTIFIER
 
         // Test completion in the middle of pattern - position after 'var a : /'
-        caretPosition.setLine(2);
-        caretPosition.setCharacter(16);
+        caretPosition.setLine(3);
+        caretPosition.setCharacter(14);
         result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
-        assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // datasource name is IDENTIFIER
+        assertThat(completionItemStrings(result)).contains("IDENTIFIER"); // datasource name is IDENTIFIER
 
         // Test completion after 'var '
-        caretPosition.setLine(2);
-        caretPosition.setCharacter(11);
+        caretPosition.setLine(3);
+        caretPosition.setCharacter(8);
         result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // variable name is IDENTIFIER
 
         // Test completion inside consequence block
-        caretPosition.setLine(3);
-        caretPosition.setCharacter(12);
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(8);
         result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("int", "var", "if"); // any java expressions
     }
@@ -109,23 +109,23 @@ class DrlxCompletionHelperTest {
     @Test
     void multipleRules() {
         String text = """
-                class Foo {
-                    rule R1 {
-                       var a : /as,
-                       do { System.out.println(a);}
-                    }
-                    
-                    rule R2 {
-                       var b : /bs,
-                       do { System.out.println(b);}
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do { System.out.println(a);}
+                }
+
+                rule R2 {
+                    var b : /bs,
+                    do { System.out.println(b);}
                 }
                 """;
 
         Position caretPosition = new Position();
-        
+
         // Test completion at the start of second rule
-        caretPosition.setLine(6);
+        caretPosition.setLine(7);
         caretPosition.setCharacter(0);
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("rule");

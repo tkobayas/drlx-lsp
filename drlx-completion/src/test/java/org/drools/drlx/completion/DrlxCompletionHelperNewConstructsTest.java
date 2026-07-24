@@ -62,17 +62,17 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void ruleWithAnnotation() {
         String text = """
-                class Foo {
-                    @Timer(5s)
-                    rule R1 {
-                        var a : /persons,
-                        do { System.out.println(a); }
-                    }
+                unit MyUnit;
+
+                @Timer(5s)
+                rule R1 {
+                    var a : /persons,
+                    do { System.out.println(a); }
                 }
                 """;
 
         // caret: |rule R1 {  (after @Timer annotation)
-        Position caret = new Position(2, 4);
+        Position caret = new Position(3, 0);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).contains("rule");
     }
@@ -82,16 +82,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void ruleWithParameters_identifierExpectedForType() {
         String text = """
-                class Foo {
-                    rule findPerson(String name) {
-                        var p : /persons[name == name],
-                        do { System.out.println(p); }
-                    }
+                unit MyUnit;
+
+                rule findPerson(String name) {
+                    var p : /persons[name == name],
+                    do { System.out.println(p); }
                 }
                 """;
 
         // caret: var |p : /persons[name == name],
-        Position caret = new Position(2, 12);
+        Position caret = new Position(3, 8);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).containsOnly("IDENTIFIER");
     }
@@ -101,16 +101,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void ruleItemStart_keywordsAndIdentifierBothOffered() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var a : /persons,
+                unit MyUnit;
 
-                    }
+                rule R1 {
+                    var a : /persons,
+
                 }
                 """;
 
         // caret: empty line after first pattern — new rule item position
-        Position caret = new Position(3, 8);
+        Position caret = new Position(4, 4);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).contains("not", "exists", "and", "or", "test", "if", "match", "do", "var");
         assertThat(items).contains("IDENTIFIER");
@@ -119,15 +119,15 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void ruleItemStart_emptyRuleBody() {
         String text = """
-                class Foo {
-                    rule R1 {
+                unit MyUnit;
 
-                    }
+                rule R1 {
+
                 }
                 """;
 
         // caret: empty rule body — first rule item position
-        Position caret = new Position(2, 8);
+        Position caret = new Position(3, 4);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).contains("not", "exists", "do", "var");
         assertThat(items).contains("IDENTIFIER");
@@ -136,17 +136,17 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void ruleItemStart_beforeNotElement() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var a : /persons,
-                        not /orders,
-                        do { System.out.println(a); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /persons,
+                    not /orders,
+                    do { System.out.println(a); }
                 }
                 """;
 
         // caret: |not /orders, — rule item start where CE keywords should appear
-        Position caret = new Position(3, 8);
+        Position caret = new Position(4, 4);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).contains("not", "exists", "if", "match", "do");
         assertThat(items).contains("IDENTIFIER");
@@ -157,17 +157,17 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void testElement_expressionContext() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var a : /as,
-                        test a.age > 18,
-                        do { System.out.println(a); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    test a.age > 18,
+                    do { System.out.println(a); }
                 }
                 """;
 
         // caret: test |a.age > 18,
-        Position caret = new Position(3, 13);
+        Position caret = new Position(4, 9);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).doesNotContain("rule", "window");
     }
@@ -177,17 +177,17 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void matchBranch_doesNotOfferTopLevelKeywords() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var p : /persons,
-                        match (p.status)
-                        case "active" do { System.out.println("active"); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    match (p.status)
+                    case "active" do { System.out.println("active"); }
                 }
                 """;
 
         // caret: match |(p.status)
-        Position caret = new Position(3, 14);
+        Position caret = new Position(4, 10);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).doesNotContain("rule");
     }
@@ -197,16 +197,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void oopathWithConstraint_noTopLevelKeywords() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var p : /persons[age > 18],
-                        do { System.out.println(p); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons[age > 18],
+                    do { System.out.println(p); }
                 }
                 """;
 
         // caret: /persons[age > 18|],
-        Position caret = new Position(2, 24);
+        Position caret = new Position(3, 20);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).doesNotContain("rule", "window");
     }
@@ -214,16 +214,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void oopathChained_identifierExpected() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var a : /persons/address[city == "Tokyo"],
-                        do { System.out.println(a); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /persons/address[city == "Tokyo"],
+                    do { System.out.println(a); }
                 }
                 """;
 
         // caret: /persons/|address[city == "Tokyo"],
-        Position caret = new Position(2, 25);
+        Position caret = new Position(3, 21);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).containsOnly("IDENTIFIER");
     }
@@ -233,16 +233,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void windowFilter_identifierExpectedForBind() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var o : /orders |time[5s],
-                        do { System.out.println(o); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var o : /orders |time[5s],
+                    do { System.out.println(o); }
                 }
                 """;
 
         // caret: var |o : /orders |time[5s],
-        Position caret = new Position(2, 12);
+        Position caret = new Position(3, 8);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).containsOnly("IDENTIFIER");
     }
@@ -274,16 +274,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void consequence_javaExpressionsOffered() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var a : /persons,
-                        do { System.out.println(a); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /persons,
+                    do { System.out.println(a); }
                 }
                 """;
 
         // caret: do { |System.out.println(a); }
-        Position caret = new Position(3, 13);
+        Position caret = new Position(4, 9);
         List<String> items = completionItemStrings(DrlxCompletionHelper.getCompletionItems(text, caret));
         assertThat(items).contains("int", "var", "if");
     }
@@ -293,16 +293,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void noCrash_notElement() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        not /persons,
-                        do { System.out.println("no persons"); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    not /persons,
+                    do { System.out.println("no persons"); }
                 }
                 """;
 
         // caret: not |/persons,
-        Position caret = new Position(2, 12);
+        Position caret = new Position(3, 8);
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caret);
         assertThat(result).isNotNull();
     }
@@ -310,16 +310,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void noCrash_existsElement() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        exists /persons,
-                        do { System.out.println("persons exist"); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    exists /persons,
+                    do { System.out.println("persons exist"); }
                 }
                 """;
 
         // caret: exists |/persons,
-        Position caret = new Position(2, 15);
+        Position caret = new Position(3, 11);
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caret);
         assertThat(result).isNotNull();
     }
@@ -327,16 +327,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void noCrash_notParenForm() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        not(/persons, /orders),
-                        do { System.out.println("none"); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    not(/persons, /orders),
+                    do { System.out.println("none"); }
                 }
                 """;
 
         // caret: not(|/persons, /orders),
-        Position caret = new Position(2, 12);
+        Position caret = new Position(3, 8);
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caret);
         assertThat(result).isNotNull();
     }
@@ -344,20 +344,20 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void noCrash_conditionalBranch() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var p : /persons,
-                        if (p.age > 18) {
-                            var s : /seniors,
-                        } else {
-                            var j : /juniors,
-                        }
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    if (p.age > 18) {
+                        var s : /seniors,
+                    } else {
+                        var j : /juniors,
                     }
                 }
                 """;
 
-        // caret: } else {\n            |var j : /juniors,
-        Position caret = new Position(6, 12);
+        // caret: } else {\n        |var j : /juniors,
+        Position caret = new Position(7, 8);
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caret);
         assertThat(result).isNotNull();
     }
@@ -365,18 +365,18 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void noCrash_matchBranch() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var p : /persons,
-                        match (p.status)
-                        case "active" do { System.out.println("active"); }
-                        case "inactive" do { System.out.println("inactive"); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    match (p.status)
+                    case "active" do { System.out.println("active"); }
+                    case "inactive" do { System.out.println("inactive"); }
                 }
                 """;
 
         // caret: |case "inactive" do { ... }
-        Position caret = new Position(5, 8);
+        Position caret = new Position(6, 4);
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caret);
         assertThat(result).isNotNull();
     }
@@ -384,16 +384,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void noCrash_accumulateItem() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var total : int = sum(/orders.amount),
-                        do { System.out.println(total); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var total : int = sum(/orders.amount),
+                    do { System.out.println(total); }
                 }
                 """;
 
         // caret: |var total : int = sum(/orders.amount),
-        Position caret = new Position(2, 8);
+        Position caret = new Position(3, 4);
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caret);
         assertThat(result).isNotNull();
     }
@@ -401,16 +401,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void noCrash_passivePattern() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var a : ?/persons,
-                        do { System.out.println(a); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var a : ?/persons,
+                    do { System.out.println(a); }
                 }
                 """;
 
         // caret: var a : ?/|persons,
-        Position caret = new Position(2, 17);
+        Position caret = new Position(3, 13);
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caret);
         assertThat(result).isNotNull();
     }
@@ -418,16 +418,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void noCrash_groupByKeyword() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        groupBy(Person p : /persons, var key = p.department, int count = count(p)),
-                        do { System.out.println(count); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    groupBy(Person p : /persons, var key = p.department, int count = count(p)),
+                    do { System.out.println(count); }
                 }
                 """;
 
         // caret: groupBy(|Person p : /persons, ...),
-        Position caret = new Position(2, 16);
+        Position caret = new Position(3, 12);
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caret);
         assertThat(result).isNotNull();
     }
@@ -435,16 +435,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void noCrash_andOrElements() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        and(/persons, /orders),
-                        do { System.out.println("both"); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    and(/persons, /orders),
+                    do { System.out.println("both"); }
                 }
                 """;
 
         // caret: and(|/persons, /orders),
-        Position caret = new Position(2, 12);
+        Position caret = new Position(3, 8);
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caret);
         assertThat(result).isNotNull();
     }
@@ -452,16 +452,16 @@ class DrlxCompletionHelperNewConstructsTest {
     @Test
     void noCrash_customConstraint() {
         String text = """
-                class Foo {
-                    rule R1 {
-                        var e : /events[this after[0s, 1h] $other],
-                        do { System.out.println(e); }
-                    }
+                unit MyUnit;
+
+                rule R1 {
+                    var e : /events[this after[0s, 1h] $other],
+                    do { System.out.println(e); }
                 }
                 """;
 
         // caret: /events[this after[0s,| 1h] $other],
-        Position caret = new Position(2, 24);
+        Position caret = new Position(3, 20);
         List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caret);
         assertThat(result).isNotNull();
     }
