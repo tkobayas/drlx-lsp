@@ -157,12 +157,12 @@ class DrlxC3CandidatesTest {
 
     @Test
     void constraintExpression() {
-        // At '[' before 'age' in '/persons[age > 18]'
-        CandidateResult r = collectAt(TEXT, 3, 23);
-        assertThat(tokenNames(r)).contains("#");
+        // At 'age' inside '/persons[age > 18]' — expression inside constraint bracket
+        CandidateResult r = collectAt(TEXT, 3, 25);
+        assertThat(tokenNames(r)).contains("this", "super", "new", "var");
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
-                .contains("oopathRoot");
+                .contains("drlxExpression");
     }
 
     @Test
@@ -242,11 +242,11 @@ class DrlxC3CandidatesTest {
 
     @Test
     void ruleParameterType() {
-        // At position after 'String' in 'R2(String name)' — type position
-        CandidateResult r = collectAt(TEXT, 13, 10);
-        assertThat(tokenNames(r)).isEmpty();
+        // At 'String' in 'R2(String name)' — parameter type position
+        CandidateResult r = collectAt(TEXT, 13, 8);
+        assertThat(tokenNames(r)).contains("boolean", "int", "long", "short", "char", "float", "double", "byte");
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
-                .contains("ruleParameter");
+                .contains("ruleParameter", "typeType");
     }
 }
