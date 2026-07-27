@@ -14,10 +14,6 @@ public enum CompletionSite {
     RULE_PARAMETER,
     UNKNOWN;
 
-    public boolean isIdentifierExpected() {
-        return this != UNKNOWN;
-    }
-
     public boolean needsSemanticCompletions() {
         return this != UNKNOWN;
     }
