@@ -16,6 +16,7 @@ import org.drools.drlx.parser.DrlxParser;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.drools.drlx.completion.CompletionSite.*;
 
 /**
  * Characterization tests for antlr4-c3 behavior.
@@ -50,7 +51,7 @@ class DrlxC3CandidatesTest {
 
     // --- Helpers ---
 
-    record CandidateResult(CodeCompletionCore.CandidatesCollection candidates, DrlxParser parser) {}
+    record CandidateResult(CodeCompletionCore.CandidatesCollection candidates, DrlxParser parser, int tokenIndex) {}
 
     private static CandidateResult collectAt(String text, int line, int col) {
         ANTLRInputStream input = new ANTLRInputStream(text);
@@ -70,7 +71,7 @@ class DrlxC3CandidatesTest {
 
         CodeCompletionCore core = new CodeCompletionCore(parser, PREFERRED_RULES, Tokens.IGNORED);
         CodeCompletionCore.CandidatesCollection candidates = core.collectCandidates(tokenIndex, null);
-        return new CandidateResult(candidates, parser);
+        return new CandidateResult(candidates, parser, tokenIndex);
     }
 
     private static Set<String> tokenNames(CandidateResult r) {
@@ -82,6 +83,10 @@ class DrlxC3CandidatesTest {
 
     private static boolean hasRule(CandidateResult r, int ruleIndex) {
         return r.candidates.rules.containsKey(ruleIndex);
+    }
+
+    private static CompletionSite siteAt(CandidateResult r) {
+        return CompletionContextAnalyzer.analyze(r.candidates(), r.parser(), r.tokenIndex());
     }
 
     private static List<String> ruleCallStack(CandidateResult r, int ruleIndex) {
@@ -103,6 +108,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("compilationUnit");
+        assertThat(siteAt(r)).isEqualTo(COMPILATION_UNIT);
     }
 
     @Test
@@ -110,6 +116,7 @@ class DrlxC3CandidatesTest {
         CandidateResult r = collectAt(TEXT, 2, 0);
         assertThat(tokenNames(r)).contains("rule", "window");
         assertThat(tokenNames(r)).doesNotContain("not", "exists", "do");
+        assertThat(siteAt(r)).isEqualTo(RULE_DECLARATION);
     }
 
     @Test
@@ -121,6 +128,7 @@ class DrlxC3CandidatesTest {
                 .contains("ruleDeclaration");
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .doesNotContain("ruleBody");
+        assertThat(siteAt(r)).isEqualTo(RULE_DECLARATION);
     }
 
     // --- Rule item positions ---
@@ -133,6 +141,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("ruleItem", "boundOopath");
+        assertThat(siteAt(r)).isEqualTo(RULE_ITEM);
     }
 
     @Test
@@ -143,6 +152,9 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("boundOopath");
+        // C3 call stack includes ruleItem because boundOopath is reached through it;
+        // the analyzer classifies this as RULE_ITEM rather than BIND_NAME
+        assertThat(siteAt(r)).isEqualTo(RULE_ITEM);
     }
 
     @Test
@@ -153,6 +165,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("oopathRoot");
+        assertThat(siteAt(r)).isEqualTo(ENTRY_POINT);
     }
 
     @Test
@@ -163,6 +176,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("drlxExpression");
+        assertThat(siteAt(r)).isEqualTo(CONSTRAINT_EXPRESSION);
     }
 
     @Test
@@ -173,6 +187,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("oopathChunk");
+        assertThat(siteAt(r)).isEqualTo(OOPATH_CHUNK);
     }
 
     @Test
@@ -182,6 +197,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("drlxExpression");
+        assertThat(siteAt(r)).isEqualTo(CONSTRAINT_EXPRESSION);
     }
 
     @Test
@@ -192,6 +208,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("ruleItem", "boundOopath");
+        assertThat(siteAt(r)).isEqualTo(RULE_ITEM);
     }
 
     @Test
@@ -200,6 +217,7 @@ class DrlxC3CandidatesTest {
         CandidateResult r = collectAt(TEXT, 6, 4);
         assertThat(tokenNames(r)).contains("not", "exists", "do");
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
+        assertThat(siteAt(r)).isEqualTo(RULE_ITEM);
     }
 
     // --- Test element ---
@@ -212,6 +230,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("testElement", "expression", "primary");
+        assertThat(siteAt(r)).isEqualTo(TEST_EXPRESSION);
     }
 
     // --- Consequence block ---
@@ -225,6 +244,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("ruleConsequence", "block");
+        assertThat(siteAt(r)).isEqualTo(CONSEQUENCE_EXPRESSION);
     }
 
     @Test
@@ -236,6 +256,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("expression");
+        assertThat(siteAt(r)).isEqualTo(DOT_ACCESS);
     }
 
     // --- Rule with parameters ---
@@ -248,5 +269,6 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("ruleParameter", "typeType");
+        assertThat(siteAt(r)).isEqualTo(RULE_PARAMETER);
     }
 }
