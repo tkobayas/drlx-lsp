@@ -25,14 +25,6 @@ public class CompletionContextAnalyzer {
             return CompletionSite.UNKNOWN;
         }
 
-        // When the identifier candidate's deepest context is an annotation qualifier
-        // (e.g., at file start or before 'rule' where only @annotation identifiers are valid),
-        // there's no meaningful semantic completion to offer
-        if (!identifierStack.isEmpty()
-                && identifierStack.get(identifierStack.size() - 1) == DrlxParser.RULE_altAnnotationQualifiedName) {
-            return CompletionSite.UNKNOWN;
-        }
-
         if (identifierStack.contains(DrlxParser.RULE_ruleConsequence)
                 && identifierStack.contains(DrlxParser.RULE_block)) {
             return CompletionSite.CONSEQUENCE_EXPRESSION;
@@ -73,11 +65,13 @@ public class CompletionContextAnalyzer {
         }
 
         if (identifierStack.contains(DrlxParser.RULE_ruleDeclaration)
-                && !identifierStack.contains(DrlxParser.RULE_ruleBody)) {
+                && !identifierStack.contains(DrlxParser.RULE_ruleBody)
+                && !identifierStack.contains(DrlxParser.RULE_altAnnotationQualifiedName)) {
             return CompletionSite.RULE_DECLARATION;
         }
 
-        if (identifierStack.contains(DrlxParser.RULE_compilationUnit)) {
+        if (identifierStack.contains(DrlxParser.RULE_compilationUnit)
+                || identifierStack.contains(DrlxParser.RULE_drlxCompilationUnit)) {
             return CompletionSite.COMPILATION_UNIT;
         }
 

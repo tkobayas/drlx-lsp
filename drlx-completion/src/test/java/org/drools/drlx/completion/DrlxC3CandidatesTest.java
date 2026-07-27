@@ -108,7 +108,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("compilationUnit");
-        assertThat(siteAt(r)).isEqualTo(UNKNOWN);
+        assertThat(siteAt(r)).isEqualTo(COMPILATION_UNIT);
     }
 
     @Test
@@ -116,7 +116,7 @@ class DrlxC3CandidatesTest {
         CandidateResult r = collectAt(TEXT, 2, 0);
         assertThat(tokenNames(r)).contains("rule", "window");
         assertThat(tokenNames(r)).doesNotContain("not", "exists", "do");
-        assertThat(siteAt(r)).isEqualTo(UNKNOWN);
+        assertThat(siteAt(r)).isEqualTo(COMPILATION_UNIT);
     }
 
     @Test
@@ -244,10 +244,7 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("ruleConsequence", "block");
-        // Call stack ends with altAnnotationQualifiedName (variable modifier annotation
-        // is valid here), so the annotation filter returns UNKNOWN — same as old
-        // isMajorIdentifierRule behavior. Keywords still come from candidates.tokens.
-        assertThat(siteAt(r)).isEqualTo(UNKNOWN);
+        assertThat(siteAt(r)).isEqualTo(CONSEQUENCE_EXPRESSION);
     }
 
     @Test
@@ -272,8 +269,6 @@ class DrlxC3CandidatesTest {
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("ruleParameter", "typeType");
-        // Call stack ends with altAnnotationQualifiedName (type annotations are valid),
-        // so UNKNOWN — same as old isMajorIdentifierRule behavior
-        assertThat(siteAt(r)).isEqualTo(UNKNOWN);
+        assertThat(siteAt(r)).isEqualTo(RULE_PARAMETER);
     }
 }

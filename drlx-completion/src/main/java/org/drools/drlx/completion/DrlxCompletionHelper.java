@@ -92,6 +92,10 @@ public class DrlxCompletionHelper {
 
         // caret is waiting on completion, check a previous token
         int previousTokenIndex = caretTokenIndex - 1;
+        if (previousTokenIndex < 0) {
+            semanticItems.add(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
+            return semanticItems;
+        }
 
         Token token = parser.getTokenStream().get(previousTokenIndex);
 
