@@ -17,4 +17,8 @@ public enum CompletionSite {
     public boolean isIdentifierExpected() {
         return this != UNKNOWN;
     }
+
+    public boolean needsSemanticCompletions() {
+        return this != UNKNOWN;
+    }
 }

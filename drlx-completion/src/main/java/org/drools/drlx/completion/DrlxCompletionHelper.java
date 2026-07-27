@@ -43,10 +43,6 @@ public class DrlxCompletionHelper {
             DrlxParser.RULE_identifier
     );
 
-    private static final Set<Integer> MINOR_IDENTIFIER_RULES = Set.of(
-            DrlxParser.RULE_altAnnotationQualifiedName
-    );
-
     private DrlxCompletionHelper() {
     }
 
@@ -79,7 +75,8 @@ public class DrlxCompletionHelper {
                 .forEach(items::add);
 
         // 2. Additionally: semantic completions when identifier rule applies
-        if (isMajorIdentifierRule(candidates)) {
+        CompletionSite site = CompletionContextAnalyzer.analyze(candidates, parser, caretTokenIndex);
+        if (site.needsSemanticCompletions()) {
             items.addAll(createSemanticCompletions(parser, parseTree, caretTokenIndex));
         }
 
@@ -152,15 +149,6 @@ public class DrlxCompletionHelper {
         int stopIndex = stopToken.getTokenIndex();
 
         return tokenIndex >= startIndex && tokenIndex <= stopIndex;
-    }
-
-    private static boolean isMajorIdentifierRule(CodeCompletionCore.CandidatesCollection candidates) {
-        List<Integer> ruleStack = candidates.rules.get(DrlxParser.RULE_identifier);
-        if (ruleStack == null || ruleStack.isEmpty()) {
-            return false; // not identifier rule
-        }
-        Integer lastRule = ruleStack.get(ruleStack.size() - 1);
-        return !MINOR_IDENTIFIER_RULES.contains(lastRule);
     }
 
     private static List<CompletionItem> deduplicateItems(List<CompletionItem> items) {
