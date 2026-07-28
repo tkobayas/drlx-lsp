@@ -2,6 +2,8 @@ package org.drools.drlx.lsp.server;
 
 import java.util.concurrent.CompletableFuture;
 
+import org.drools.drlx.completion.semantic.CurrentClassloaderProvider;
+import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
 import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
@@ -20,7 +22,8 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
     private LanguageClient client;
 
     public DrlxLspServer() {
-        textService = new DrlxLspDocumentService(this);
+        WorkspaceSemanticModel model = new WorkspaceSemanticModel(new CurrentClassloaderProvider());
+        textService = new DrlxLspDocumentService(this, model);
         workspaceService = new DrlxLspWorkspaceService();
     }
 

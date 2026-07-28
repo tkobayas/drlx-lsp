@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import org.drools.drlx.completion.DrlxCompletionHelper;
+import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.eclipse.lsp4j.CompletionItem;
@@ -34,9 +35,11 @@ public class DrlxLspDocumentService implements TextDocumentService {
     private final Map<String, String> sourcesMap = new ConcurrentHashMap<>();
 
     private final DrlxLspServer server;
+    private final DrlxCompletionHelper completionHelper;
 
-    public DrlxLspDocumentService(DrlxLspServer server) {
+    public DrlxLspDocumentService(DrlxLspServer server, WorkspaceSemanticModel model) {
         this.server = server;
+        this.completionHelper = new DrlxCompletionHelper(model);
     }
 
     @Override
@@ -97,7 +100,7 @@ public class DrlxLspDocumentService implements TextDocumentService {
         logger.info("Completion requested for {} at position {}:{}", uri, caretPosition.getLine(), caretPosition.getCharacter());
         logger.debug("Document text length: {}", text != null ? text.length() : 0);
 
-        List<CompletionItem> completionItems = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
+        List<CompletionItem> completionItems = completionHelper.getCompletionItems(text, caretPosition);
 
         server.getClient().showMessage(new MessageParams(MessageType.Info, "Position=[" + caretPosition.getLine() + "," + caretPosition.getCharacter() + "]"));
         server.getClient().showMessage(new MessageParams(MessageType.Info, "completionItems = " + completionItemStrings(completionItems)));
