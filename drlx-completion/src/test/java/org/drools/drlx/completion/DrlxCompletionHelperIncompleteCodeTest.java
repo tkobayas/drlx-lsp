@@ -6,17 +6,23 @@ import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Position;
 import org.junit.jupiter.api.Test;
 
+import org.drools.drlx.completion.semantic.CurrentClassloaderProvider;
+import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.drools.drlx.completion.DrlxCompletionHelper.completionItemStrings;
 
 class DrlxCompletionHelperIncompleteCodeTest {
+
+    private final DrlxCompletionHelper helper = new DrlxCompletionHelper(
+            new WorkspaceSemanticModel(new CurrentClassloaderProvider()));
 
     @Test
     void emptyInput() {
         String text = "";
         Position caretPosition = new Position(0, 0);
 
-        List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("package", "import", "class");
     }
 
@@ -33,7 +39,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
         caretPosition.setLine(3);
         caretPosition.setCharacter(13); // After the '/'
 
-        List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("IDENTIFIER"); // datasource name is IDENTIFIER
     }
 
@@ -51,7 +57,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
         caretPosition.setLine(4);
         caretPosition.setCharacter(16); // After the 'System.'
 
-        List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("out", "in", "gc"); // System fields, methods
     }
 
@@ -69,7 +75,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
         caretPosition.setLine(4);
         caretPosition.setCharacter(20); // After the 'System.out.'
 
-        List<CompletionItem> result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("println"); // System.out fields, methods
     }
 
@@ -87,7 +93,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
         // Test completion after 'System.'
         caretPosition.setLine(2);
         caretPosition.setCharacter(15);
-        result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
+        result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("out", "in", "gc"); // System fields, methods
     }
 
@@ -109,7 +115,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
         // Test completion after 'list#ArrayList#.'
         caretPosition.setLine(6);
         caretPosition.setCharacter(25);
-        result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
+        result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("trimToSize");
         assertThat(completionItemStrings(result)).doesNotContain("removeRange"); // 'removeRange' is a protected method, so not included in suggestions
     }
@@ -130,7 +136,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
         // Test completion after '10.5B.'
         caretPosition.setLine(4);
         caretPosition.setCharacter(15);
-        result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
+        result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("precision");
     }
 
@@ -155,7 +161,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
         // Test completion after 'p.address.'
         caretPosition.setLine(9);
         caretPosition.setCharacter(18);
-        result = DrlxCompletionHelper.getCompletionItems(text, caretPosition);
+        result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("city", "getCity", "setCity"); // `city` can be directly accessed in mvel
     }
 }

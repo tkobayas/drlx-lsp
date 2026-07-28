@@ -28,7 +28,7 @@ public class WorkspaceSemanticModel {
 
     private static CombinedTypeSolver buildTypeSolver(ClasspathProvider classpathProvider) {
         CombinedTypeSolver solver = new CombinedTypeSolver();
-        solver.add(new ReflectionTypeSolver());
+        solver.add(new ReflectionTypeSolver(false));
         return solver;
     }
 }
