@@ -140,7 +140,7 @@ public class DrlxCompletionHelper {
         return result;
     }
 
-    static CompletionItem createCompletionItem(String label, CompletionItemKind itemKind) {
+    public static CompletionItem createCompletionItem(String label, CompletionItemKind itemKind) {
         CompletionItem completionItem = new CompletionItem();
         completionItem.setInsertText(label);
         completionItem.setLabel(label);
