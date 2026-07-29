@@ -3,32 +3,24 @@ package org.drools.drlx.completion;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import com.github.javaparser.ast.AccessSpecifier;
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.resolution.declarations.ResolvedFieldDeclaration;
-import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
-import com.github.javaparser.resolution.types.ResolvedReferenceType;
-import com.github.javaparser.resolution.types.ResolvedType;
-import com.github.javaparser.symbolsolver.JavaSymbolSolver;
-import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionFieldDeclaration;
-import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionMethodDeclaration;
 import com.vmware.antlr4c3.CodeCompletionCore;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.drlx.completion.semantic.CompletionContext;
+import org.drools.drlx.completion.semantic.CompletionExpression;
+import org.drools.drlx.completion.semantic.ExpressionTypeResolver;
+import org.drools.drlx.completion.semantic.MemberCompletionProvider;
+import org.drools.drlx.completion.semantic.SemanticType;
+import org.drools.drlx.completion.semantic.VisibleSymbols;
 import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
 import org.drools.drlx.parser.DrlxLexer;
 import org.drools.drlx.parser.DrlxParser;
-import org.drools.drlx.parser.TolerantDrlxToJavaParserVisitor;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.Position;
@@ -44,9 +36,15 @@ public class DrlxCompletionHelper {
     );
 
     private final WorkspaceSemanticModel model;
+    private final ExpressionTypeResolver resolver;
+    private final MemberCompletionProvider memberProvider;
 
-    public DrlxCompletionHelper(WorkspaceSemanticModel model) {
+    public DrlxCompletionHelper(WorkspaceSemanticModel model,
+                                ExpressionTypeResolver resolver,
+                                MemberCompletionProvider memberProvider) {
         this.model = model;
+        this.resolver = resolver;
+        this.memberProvider = memberProvider;
     }
 
     public List<CompletionItem> getCompletionItems(String text, Position caretPosition) {
@@ -96,36 +94,19 @@ public class DrlxCompletionHelper {
     }
 
     private List<CompletionItem> resolveDotAccess(CompletionContext ctx) {
-        List<CompletionItem> semanticItems = new ArrayList<>();
+        CompletionExpression expression = CompletionExpression.fromCaretPosition(
+                ctx.parseTree(), ctx.caretTokenIndex());
 
-        int previousTokenIndex = ctx.caretTokenIndex() - 1;
-        if (previousTokenIndex < 0) {
-            semanticItems.add(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
-            return semanticItems;
+        Optional<SemanticType> resolved = resolver.resolve(expression, VisibleSymbols.empty(), model);
+
+        if (resolved.isPresent()) {
+            List<CompletionItem> items = memberProvider.completions(resolved.get());
+            if (!items.isEmpty()) {
+                return items;
+            }
         }
 
-        int scopeTokenIndex = previousTokenIndex - 1;
-
-        TolerantDrlxToJavaParserVisitor visitor = new TolerantDrlxToJavaParserVisitor();
-        CompilationUnit compilationUnit = (CompilationUnit) visitor.visit(ctx.parseTree());
-
-        JavaSymbolSolver solver = new JavaSymbolSolver(ctx.typeSolver());
-        solver.inject(compilationUnit);
-
-        Map<Integer, Node> tokenIdJPNodeMap = visitor.getTokenIdJPNodeMap();
-        Expression scopeNode = (Expression) tokenIdJPNodeMap.get(scopeTokenIndex);
-        if (scopeNode == null) {
-            logger.info("scopeNode is null");
-        } else {
-            logger.info("scopeNode: " + scopeNode.getClass() + " , text => [" + scopeNode.toString() + "]");
-            ResolvedType resolvedType = scopeNode.calculateResolvedType();
-            semanticItems.addAll(createTypeBasedCompletions(resolvedType));
-        }
-
-        if (semanticItems.isEmpty()) {
-            semanticItems.add(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
-        }
-        return semanticItems;
+        return List.of(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
     }
 
     private List<CompletionItem> deduplicateItems(List<CompletionItem> items) {
@@ -167,82 +148,6 @@ public class DrlxCompletionHelper {
         }
 
         return tokenIndex;
-    }
-
-    private List<CompletionItem> createTypeBasedCompletions(ResolvedType resolvedType) {
-        List<CompletionItem> items = new ArrayList<>();
-
-        try {
-            if (resolvedType.isReferenceType()) {
-                ResolvedReferenceType referenceType = resolvedType.asReferenceType();
-
-                for (ResolvedFieldDeclaration field : referenceType.getAllFieldsVisibleToInheritors()) {
-                    if (isAccessible(field)) {
-                        CompletionItem item = createCompletionItem(field.getName(), CompletionItemKind.Field);
-                        item.setDetail(field.getType().describe());
-                        items.add(item);
-                    }
-                }
-
-                referenceType.getAllMethods().stream()
-                        .filter(method -> isAccessible(method))
-                        .filter(method -> !method.getName().startsWith("$"))
-                        .map(method -> method.getName())
-                        .distinct()
-                        .forEach(methodName -> items.add(createCompletionItem(methodName, CompletionItemKind.Method)));
-
-                addDirectPropertyAccess(items);
-
-            } else if (resolvedType.isArray()) {
-                items.add(createCompletionItem("length", CompletionItemKind.Field));
-            }
-        } catch (Exception e) {
-            System.err.println("Error resolving type members: " + e.getMessage());
-        }
-
-        return items;
-    }
-
-    private void addDirectPropertyAccess(List<CompletionItem> items) {
-        Set<CompletionItem> propertyNames = items.stream()
-                .filter(item -> item.getKind() == CompletionItemKind.Method)
-                .map(CompletionItem::getInsertText)
-                .filter(name -> name.startsWith("get") || name.startsWith("is"))
-                .map(name -> {
-                    if (name.startsWith("get")) {
-                        return name.substring(3, 4).toLowerCase() + name.substring(4);
-                    } else {
-                        return name.substring(2, 3).toLowerCase() + name.substring(3);
-                    }
-                })
-                .map(propName -> createCompletionItem(propName, CompletionItemKind.Field))
-                .collect(Collectors.toSet());
-
-        items.addAll(propertyNames);
-    }
-
-    private boolean isAccessible(ResolvedFieldDeclaration field) {
-        try {
-            if (field instanceof ReflectionFieldDeclaration reflectionField) {
-                AccessSpecifier accessSpecifier = reflectionField.accessSpecifier();
-                return accessSpecifier == AccessSpecifier.PUBLIC;
-            }
-            return true;
-        } catch (Exception e) {
-            return true;
-        }
-    }
-
-    private boolean isAccessible(ResolvedMethodDeclaration method) {
-        try {
-            if (method instanceof ReflectionMethodDeclaration reflectionMethod) {
-                AccessSpecifier accessSpecifier = reflectionMethod.accessSpecifier();
-                return accessSpecifier == AccessSpecifier.PUBLIC;
-            }
-            return true;
-        } catch (Exception e) {
-            return true;
-        }
     }
 
     public static List<String> completionItemStrings(List<CompletionItem> result) {

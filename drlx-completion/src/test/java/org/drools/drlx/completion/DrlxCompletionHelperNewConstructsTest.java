@@ -7,6 +7,8 @@ import org.eclipse.lsp4j.Position;
 import org.junit.jupiter.api.Test;
 
 import org.drools.drlx.completion.semantic.CurrentClassloaderProvider;
+import org.drools.drlx.completion.semantic.MemberCompletionProvider;
+import org.drools.drlx.completion.semantic.TolerantVisitorTypeResolver;
 import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,7 +26,9 @@ import static org.drools.drlx.completion.DrlxCompletionHelper.completionItemStri
 class DrlxCompletionHelperNewConstructsTest {
 
     private final DrlxCompletionHelper helper = new DrlxCompletionHelper(
-            new WorkspaceSemanticModel(new CurrentClassloaderProvider()));
+            new WorkspaceSemanticModel(new CurrentClassloaderProvider()),
+            new TolerantVisitorTypeResolver(),
+            new MemberCompletionProvider());
 
     // --- drlxCompilationUnit level: window and rule keywords ---
 

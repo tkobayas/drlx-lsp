@@ -8,6 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import org.drools.drlx.completion.DrlxCompletionHelper;
+import org.drools.drlx.completion.semantic.MemberCompletionProvider;
+import org.drools.drlx.completion.semantic.TolerantVisitorTypeResolver;
 import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +41,10 @@ public class DrlxLspDocumentService implements TextDocumentService {
 
     public DrlxLspDocumentService(DrlxLspServer server, WorkspaceSemanticModel model) {
         this.server = server;
-        this.completionHelper = new DrlxCompletionHelper(model);
+        this.completionHelper = new DrlxCompletionHelper(
+                model,
+                new TolerantVisitorTypeResolver(),
+                new MemberCompletionProvider());
     }
 
     @Override
