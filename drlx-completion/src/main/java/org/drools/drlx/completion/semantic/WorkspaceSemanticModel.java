@@ -6,7 +6,7 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeS
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.drlx.parser.DrlxParser;
 
-public class WorkspaceSemanticModel {
+public class WorkspaceSemanticModel implements WorkspaceTypes {
 
     private CombinedTypeSolver typeSolver;
 
