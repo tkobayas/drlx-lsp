@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import org.drools.drlx.completion.semantic.CurrentClassloaderProvider;
 import org.drools.drlx.completion.semantic.MemberCompletionProvider;
-import org.drools.drlx.completion.semantic.TolerantVisitorTypeResolver;
+import org.drools.drlx.completion.semantic.SentinelExpressionTypeResolver;
 import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +27,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
     private final DrlxCompletionHelper helper = new DrlxCompletionHelper(
             new WorkspaceSemanticModel(new CurrentClassloaderProvider()),
-            new TolerantVisitorTypeResolver(),
+            new SentinelExpressionTypeResolver(),
             new MemberCompletionProvider());
 
     // --- drlxCompilationUnit level: window and rule keywords ---

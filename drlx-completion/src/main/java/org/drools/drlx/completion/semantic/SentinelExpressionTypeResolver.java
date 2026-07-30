@@ -87,8 +87,13 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
         return null;
     }
 
+    private static final Set<String> DEFAULT_IMPORTS = Set.of(
+            "java.math.BigDecimal",
+            "java.math.BigInteger"
+    );
+
     private Set<String> extractImports(ParseTree tree) {
-        Set<String> imports = new LinkedHashSet<>();
+        Set<String> imports = new LinkedHashSet<>(DEFAULT_IMPORTS);
         collectImports(tree, imports);
         return imports;
     }
