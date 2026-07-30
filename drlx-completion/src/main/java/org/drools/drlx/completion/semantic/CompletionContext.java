@@ -38,6 +38,10 @@ public class CompletionContext {
         return model.typeSolver();
     }
 
+    public DrlxParser parser() {
+        return parser;
+    }
+
     public int caretTokenIndex() {
         return caretTokenIndex;
     }

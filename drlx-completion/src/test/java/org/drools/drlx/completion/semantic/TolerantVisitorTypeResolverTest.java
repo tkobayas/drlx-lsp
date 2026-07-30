@@ -52,20 +52,20 @@ class TolerantVisitorTypeResolverTest {
 
     @Test
     void returnsEmptyWhenScopeTokenIndexNegative() {
+        DrlxParser parser = createParser("x");
+        parser.drlxStart();
         CompletionExpression expr = CompletionExpression.fromCaretPosition(
-                parse("x"), 0);
-        // scopeTokenIndex = 0 - 2 = -2
+                parser, parser.drlxStart(), 0);
         Optional<SemanticType> result = resolver.resolve(expr, VisibleSymbols.empty(), model);
 
         assertThat(result).isEmpty();
     }
 
-    private ParseTree parse(String text) {
+    private DrlxParser createParser(String text) {
         ANTLRInputStream input = new ANTLRInputStream(text);
         DrlxLexer lexer = new DrlxLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        DrlxParser parser = new DrlxParser(tokens);
-        return parser.drlxStart();
+        return new DrlxParser(tokens);
     }
 
     private Optional<SemanticType> resolveAt(String text, int line, int col) {
@@ -76,7 +76,7 @@ class TolerantVisitorTypeResolverTest {
         ParseTree tree = parser.drlxStart();
 
         int caretTokenIndex = computeTokenIndex(parser, line + 1, col);
-        CompletionExpression expr = CompletionExpression.fromCaretPosition(tree, caretTokenIndex);
+        CompletionExpression expr = CompletionExpression.fromCaretPosition(parser, tree, caretTokenIndex);
 
         return resolver.resolve(expr, VisibleSymbols.empty(), model);
     }

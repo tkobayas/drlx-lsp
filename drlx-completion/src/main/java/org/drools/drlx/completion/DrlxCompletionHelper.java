@@ -95,7 +95,7 @@ public class DrlxCompletionHelper {
 
     private List<CompletionItem> resolveDotAccess(CompletionContext ctx) {
         CompletionExpression expression = CompletionExpression.fromCaretPosition(
-                ctx.parseTree(), ctx.caretTokenIndex());
+                ctx.parser(), ctx.parseTree(), ctx.caretTokenIndex());
 
         Optional<SemanticType> resolved = resolver.resolve(expression, VisibleSymbols.empty(), model);
 

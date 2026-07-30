@@ -2,7 +2,6 @@ package org.drools.drlx.completion.semantic;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.drlx.parser.DrlxLexer;
 import org.drools.drlx.parser.DrlxParser;
 import org.junit.jupiter.api.Test;
@@ -13,18 +12,21 @@ class CompletionExpressionTest {
 
     @Test
     void fromCaretPositionNormal() {
+        DrlxParser parser = createParser("System.");
         CompletionExpression expr = CompletionExpression.fromCaretPosition(
-                parse("System."), 2);
+                parser, parser.drlxStart(), 2);
 
         assertThat(expr.caretTokenIndex()).isEqualTo(2);
         assertThat(expr.scopeTokenIndex()).isEqualTo(0);
         assertThat(expr.parseTree()).isNotNull();
+        assertThat(expr.parser()).isSameAs(parser);
     }
 
     @Test
     void fromCaretPositionAtZero() {
+        DrlxParser parser = createParser("x");
         CompletionExpression expr = CompletionExpression.fromCaretPosition(
-                parse("x"), 0);
+                parser, parser.drlxStart(), 0);
 
         assertThat(expr.caretTokenIndex()).isEqualTo(0);
         assertThat(expr.scopeTokenIndex()).isEqualTo(-2);
@@ -32,8 +34,9 @@ class CompletionExpressionTest {
 
     @Test
     void fromCaretPositionAtOne() {
+        DrlxParser parser = createParser(".x");
         CompletionExpression expr = CompletionExpression.fromCaretPosition(
-                parse(".x"), 1);
+                parser, parser.drlxStart(), 1);
 
         assertThat(expr.caretTokenIndex()).isEqualTo(1);
         assertThat(expr.scopeTokenIndex()).isEqualTo(-1);
@@ -45,11 +48,10 @@ class CompletionExpressionTest {
         assertThat(symbols.lookup("anything")).isEmpty();
     }
 
-    private ParseTree parse(String text) {
+    private DrlxParser createParser(String text) {
         ANTLRInputStream input = new ANTLRInputStream(text);
         DrlxLexer lexer = new DrlxLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        DrlxParser parser = new DrlxParser(tokens);
-        return parser.drlxStart();
+        return new DrlxParser(tokens);
     }
 }

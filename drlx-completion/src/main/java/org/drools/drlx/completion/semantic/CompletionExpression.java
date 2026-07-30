@@ -1,6 +1,7 @@
 package org.drools.drlx.completion.semantic;
 
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.drools.drlx.parser.DrlxParser;
 
 /**
  * An extracted expression fragment surrounding the caret, repaired for parsing.
@@ -21,18 +22,26 @@ import org.antlr.v4.runtime.tree.ParseTree;
  */
 public class CompletionExpression {
 
+    private final DrlxParser parser;
     private final ParseTree parseTree;
     private final int caretTokenIndex;
     private final int scopeTokenIndex;
 
-    private CompletionExpression(ParseTree parseTree, int caretTokenIndex, int scopeTokenIndex) {
+    private CompletionExpression(DrlxParser parser, ParseTree parseTree,
+                                int caretTokenIndex, int scopeTokenIndex) {
+        this.parser = parser;
         this.parseTree = parseTree;
         this.caretTokenIndex = caretTokenIndex;
         this.scopeTokenIndex = scopeTokenIndex;
     }
 
-    public static CompletionExpression fromCaretPosition(ParseTree tree, int caretTokenIndex) {
-        return new CompletionExpression(tree, caretTokenIndex, caretTokenIndex - 2);
+    public static CompletionExpression fromCaretPosition(
+            DrlxParser parser, ParseTree tree, int caretTokenIndex) {
+        return new CompletionExpression(parser, tree, caretTokenIndex, caretTokenIndex - 2);
+    }
+
+    public DrlxParser parser() {
+        return parser;
     }
 
     public ParseTree parseTree() {
