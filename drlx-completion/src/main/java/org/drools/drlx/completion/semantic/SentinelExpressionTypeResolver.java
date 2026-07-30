@@ -1,15 +1,17 @@
 package org.drools.drlx.completion.semantic;
 
+import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
-import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.resolution.types.ResolvedType;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.drools.drlx.parser.DrlxParser;
 import org.mvel3.ClassManager;
 import org.mvel3.MVEL;
 import org.mvel3.MVELCompiler;
@@ -48,11 +50,15 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
         logger.info("Repaired expression: [{}]", repairedText);
 
         try {
-            var params = MVEL.map().<Object>out(Type.OBJECT)
+            Set<String> imports = extractImports(expression.parseTree());
+            var builder = MVEL.map().<Object>out(Type.OBJECT)
                     .expression(repairedText)
                     .classManager(new ClassManager())
-                    .classLoader(ClassLoader.getSystemClassLoader())
-                    .build();
+                    .classLoader(ClassLoader.getSystemClassLoader());
+            if (!imports.isEmpty()) {
+                builder.imports(imports);
+            }
+            var params = builder.build();
 
             TranspiledResult result = new MVELCompiler().transpile(params);
             CompilationUnit unit = result.getUnit();
@@ -79,5 +85,22 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
             }
         }
         return null;
+    }
+
+    private Set<String> extractImports(ParseTree tree) {
+        Set<String> imports = new LinkedHashSet<>();
+        collectImports(tree, imports);
+        return imports;
+    }
+
+    private void collectImports(ParseTree node, Set<String> imports) {
+        if (node instanceof DrlxParser.ImportDeclarationContext imp) {
+            if (imp.qualifiedName() != null) {
+                imports.add(imp.qualifiedName().getText());
+            }
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            collectImports(node.getChild(i), imports);
+        }
     }
 }

@@ -8,8 +8,12 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.drlx.parser.DrlxLexer;
 import org.drools.drlx.parser.DrlxParser;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mvel3.parser.MvelParser;
+import org.mvel3.transpiler.MVELTranspiler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,6 +28,12 @@ class ExpressionTypeResolverCharacterizationTest {
     private final WorkspaceSemanticModel model =
             new WorkspaceSemanticModel(new CurrentClassloaderProvider());
     private final ExpressionTypeResolver resolver = new TolerantVisitorTypeResolver();
+
+    @BeforeAll
+    static void setup() {
+        MvelParser.Factory.USE_ANTLR = true;
+        MVELTranspiler.ENABLE_REWRITE = false;
+    }
 
     // --- Cases that pass with TolerantVisitorTypeResolver ---
 
@@ -228,6 +238,72 @@ class ExpressionTypeResolverCharacterizationTest {
     @Disabled("Requires Maven classpath — see #6")
     void realMavenWorkspaceClasses() {
         // resolve a class from a Maven dependency not on the LSP classpath
+    }
+
+    // --- Verify same fixtures with SentinelExpressionTypeResolver ---
+
+    @Nested
+    class WithSentinelResolver {
+
+        private final SentinelExpressionTypeResolver sentinelResolver = new SentinelExpressionTypeResolver();
+
+        @Test
+        void systemDot() {
+            assertResolvesTo(sentinelResolver, """
+                    unit MyUnit;
+
+                    rule R1 {
+                        var a : /as,
+                        do { System.
+                    """, 4, 16, "java.lang.System");
+        }
+
+        @Test
+        void systemOutDot() {
+            assertResolvesTo(sentinelResolver, """
+                    unit MyUnit;
+
+                    rule R1 {
+                        var a : /as,
+                        do { System.out.
+                    """, 4, 20, "java.io.PrintStream");
+        }
+
+        @Test
+        void bigDecimalLiteral() {
+            assertResolvesTo(sentinelResolver, """
+                    unit MyUnit;
+
+                    rule R1 {
+                        var a : /as,
+                        do { 10.5B.
+                    """, 4, 15, "java.math.BigDecimal");
+        }
+
+        @Test
+        void inlineCastSimple() {
+            assertResolvesTo(sentinelResolver, """
+                    import java.util.ArrayList;
+
+                    unit MyUnit;
+
+                    rule R1 {
+                        var a : /as,
+                        do { list#ArrayList#.
+                    """, 6, 25, "java.util.ArrayList");
+        }
+
+        @Test
+        void brokenCodeAfterCaret() {
+            assertResolvesTo(sentinelResolver, """
+                    unit MyUnit;
+
+                    rule R1 {
+                        var a : /as,
+                        do { System.
+                        invalid broken {{ code
+                    """, 4, 16, "java.lang.System");
+        }
     }
 
     // --- Helper methods ---
