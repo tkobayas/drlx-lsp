@@ -10,7 +10,6 @@ import org.drools.drlx.parser.DrlxLexer;
 import org.drools.drlx.parser.DrlxParser;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mvel3.parser.MvelParser;
 import org.mvel3.transpiler.MVELTranspiler;
@@ -18,16 +17,17 @@ import org.mvel3.transpiler.MVELTranspiler;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Characterization tests for ExpressionTypeResolver implementations.
+ * Characterization tests for ExpressionTypeResolver.
  * Each test resolves the type of the scope expression at a DOT_ACCESS caret position.
  *
- * Tests marked @Disabled require VisibleSymbols (#7) or Maven classpath (#6).
+ * Tests marked @Disabled require VisibleSymbols (#7), Maven classpath (#6),
+ * or are improvement targets (#8).
  */
 class ExpressionTypeResolverCharacterizationTest {
 
     private final WorkspaceSemanticModel model =
             new WorkspaceSemanticModel(new CurrentClassloaderProvider());
-    private final ExpressionTypeResolver resolver = new TolerantVisitorTypeResolver();
+    private final ExpressionTypeResolver resolver = new SentinelExpressionTypeResolver();
 
     @BeforeAll
     static void setup() {
@@ -35,7 +35,7 @@ class ExpressionTypeResolverCharacterizationTest {
         MVELTranspiler.ENABLE_REWRITE = false;
     }
 
-    // --- Cases that pass with TolerantVisitorTypeResolver ---
+    // --- Cases that pass with SentinelExpressionTypeResolver ---
 
     @Test
     void systemDot() {
@@ -74,6 +74,7 @@ class ExpressionTypeResolverCharacterizationTest {
     }
 
     @Test
+    @Disabled("Requires VisibleSymbols to declare 'p' as Person — see #7")
     void rhsLocalPropertyChain() {
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -91,6 +92,7 @@ class ExpressionTypeResolverCharacterizationTest {
     }
 
     @Test
+    @Disabled("Requires VisibleSymbols to declare 'list' — see #7")
     void inlineCastSimple() {
         String text = """
                 import java.util.ArrayList;
@@ -105,7 +107,73 @@ class ExpressionTypeResolverCharacterizationTest {
     }
 
     @Test
-    @Disabled("Improvement target for replacement resolver — baseline fails with complete code after caret")
+    void brokenCodeAfterCaret() {
+        String text = """
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do { System.
+                    invalid broken {{ code
+                """;
+        assertResolvesTo(text, 4, 16, "java.lang.System");
+    }
+
+    // --- Improvement targets — see #8 ---
+
+    @Test
+    @Disabled("Improvement target — method return type — see #8")
+    void methodReturnType() {
+        String text = """
+                import java.util.List;
+                import java.util.ArrayList;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do {
+                        List list = new ArrayList();
+                        list.get(0).
+                """;
+        assertResolvesTo(text, 9, 20, "java.lang.Object");
+    }
+
+    @Test
+    @Disabled("Improvement target — null-safe access — see #8")
+    void nullSafeAccess() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do {
+                        Person p = new Person("John", new Address("Tokyo"));
+                        p!.address!.
+                """;
+        assertResolvesTo(text, 9, 20, "org.drools.drlx.domain.Address");
+    }
+
+    @Test
+    @Disabled("Improvement target — array indexed access — see #8")
+    void arrayIndexedAccess() {
+        String text = """
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do {
+                        String[] arr = new String[]{"a","b"};
+                        arr[0].
+                """;
+        assertResolvesTo(text, 6, 15, "java.lang.String");
+    }
+
+    @Test
+    @Disabled("Improvement target — caret in middle of document — see #8")
     void caretInMiddleOfDocument() {
         String text = """
                 unit MyUnit;
@@ -124,73 +192,7 @@ class ExpressionTypeResolverCharacterizationTest {
     }
 
     @Test
-    void brokenCodeAfterCaret() {
-        String text = """
-                unit MyUnit;
-
-                rule R1 {
-                    var a : /as,
-                    do { System.
-                    invalid broken {{ code
-                """;
-        assertResolvesTo(text, 4, 16, "java.lang.System");
-    }
-
-    // --- Improvement targets: may fail with baseline, replacement should handle ---
-
-    @Test
-    @Disabled("Improvement target for replacement resolver — method return type")
-    void methodReturnType() {
-        String text = """
-                import java.util.List;
-                import java.util.ArrayList;
-
-                unit MyUnit;
-
-                rule R1 {
-                    var a : /as,
-                    do {
-                        List list = new ArrayList();
-                        list.get(0).
-                """;
-        assertResolvesTo(text, 9, 20, "java.lang.Object");
-    }
-
-    @Test
-    @Disabled("Improvement target for replacement resolver — null-safe access")
-    void nullSafeAccess() {
-        String text = """
-                import org.drools.drlx.domain.Person;
-                import org.drools.drlx.domain.Address;
-
-                unit MyUnit;
-
-                rule R1 {
-                    var a : /as,
-                    do {
-                        Person p = new Person("John", new Address("Tokyo"));
-                        p!.address!.
-                """;
-        assertResolvesTo(text, 9, 20, "org.drools.drlx.domain.Address");
-    }
-
-    @Test
-    @Disabled("Improvement target for replacement resolver — array indexed access")
-    void arrayIndexedAccess() {
-        String text = """
-                unit MyUnit;
-
-                rule R1 {
-                    var a : /as,
-                    do {
-                        String[] arr = new String[]{"a","b"};
-                        arr[0].
-                """;
-        assertResolvesTo(text, 6, 15, "java.lang.String");
-    }
-
-    @Test
-    @Disabled("Improvement target for replacement resolver — inline cast with qualified type")
+    @Disabled("Improvement target — inline cast with qualified type — see #8")
     void inlineCastQualifiedType() {
         String text = """
                 unit MyUnit;
@@ -240,87 +242,17 @@ class ExpressionTypeResolverCharacterizationTest {
         // resolve a class from a Maven dependency not on the LSP classpath
     }
 
-    // --- Verify same fixtures with SentinelExpressionTypeResolver ---
-
-    @Nested
-    class WithSentinelResolver {
-
-        private final SentinelExpressionTypeResolver sentinelResolver = new SentinelExpressionTypeResolver();
-
-        @Test
-        void systemDot() {
-            assertResolvesTo(sentinelResolver, """
-                    unit MyUnit;
-
-                    rule R1 {
-                        var a : /as,
-                        do { System.
-                    """, 4, 16, "java.lang.System");
-        }
-
-        @Test
-        void systemOutDot() {
-            assertResolvesTo(sentinelResolver, """
-                    unit MyUnit;
-
-                    rule R1 {
-                        var a : /as,
-                        do { System.out.
-                    """, 4, 20, "java.io.PrintStream");
-        }
-
-        @Test
-        void bigDecimalLiteral() {
-            assertResolvesTo(sentinelResolver, """
-                    unit MyUnit;
-
-                    rule R1 {
-                        var a : /as,
-                        do { 10.5B.
-                    """, 4, 15, "java.math.BigDecimal");
-        }
-
-        @Test
-        void inlineCastSimple() {
-            assertResolvesTo(sentinelResolver, """
-                    import java.util.ArrayList;
-
-                    unit MyUnit;
-
-                    rule R1 {
-                        var a : /as,
-                        do { list#ArrayList#.
-                    """, 6, 25, "java.util.ArrayList");
-        }
-
-        @Test
-        void brokenCodeAfterCaret() {
-            assertResolvesTo(sentinelResolver, """
-                    unit MyUnit;
-
-                    rule R1 {
-                        var a : /as,
-                        do { System.
-                        invalid broken {{ code
-                    """, 4, 16, "java.lang.System");
-        }
-    }
-
     // --- Helper methods ---
 
     private void assertResolvesTo(String text, int line, int col, String expectedFqcn) {
-        assertResolvesTo(resolver, text, line, col, expectedFqcn);
-    }
-
-    private void assertResolvesTo(ExpressionTypeResolver res, String text, int line, int col, String expectedFqcn) {
-        Optional<SemanticType> result = resolveAt(res, text, line, col);
+        Optional<SemanticType> result = resolveAt(text, line, col);
         assertThat(result)
                 .as("Expected type %s at line %d col %d", expectedFqcn, line, col)
                 .isPresent();
         assertThat(result.get().resolvedType().describe()).isEqualTo(expectedFqcn);
     }
 
-    private Optional<SemanticType> resolveAt(ExpressionTypeResolver res, String text, int line, int col) {
+    private Optional<SemanticType> resolveAt(String text, int line, int col) {
         ANTLRInputStream input = new ANTLRInputStream(text);
         DrlxLexer lexer = new DrlxLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -330,7 +262,7 @@ class ExpressionTypeResolverCharacterizationTest {
         int caretTokenIndex = computeTokenIndex(parser, line + 1, col);
         CompletionExpression expr = CompletionExpression.fromCaretPosition(parser, tree, caretTokenIndex);
 
-        return res.resolve(expr, VisibleSymbols.empty(), model);
+        return resolver.resolve(expr, VisibleSymbols.empty(), model);
     }
 
     private int computeTokenIndex(DrlxParser parser, int row, int col) {

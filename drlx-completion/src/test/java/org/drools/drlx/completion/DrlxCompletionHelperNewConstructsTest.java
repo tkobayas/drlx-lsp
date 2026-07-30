@@ -18,7 +18,7 @@ import static org.drools.drlx.completion.DrlxCompletionHelper.completionItemStri
  * Tests for code completion with new drlx-parser constructs.
  *
  * Scope: keyword token auto-discovery by antlr4-c3.
- * Semantic completions (TolerantDrlxToJavaParserVisitor) are out of scope.
+ * Semantic completions (ExpressionTypeResolver) are out of scope.
  *
  * Completion is additive: keyword tokens and semantic completions (IDENTIFIER)
  * are both surfaced when the grammar offers both at a given position.
