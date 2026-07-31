@@ -119,10 +119,10 @@ class ExpressionTypeResolverCharacterizationTest {
         assertResolvesTo(text, 4, 16, "java.lang.System");
     }
 
-    // --- Improvement targets — see #8 ---
+    // --- Improvement targets — require VisibleSymbols (#7) ---
 
     @Test
-    @Disabled("Improvement target — method return type — see #8")
+    @Disabled("Requires VisibleSymbols to declare 'list' as List — see #7")
     void methodReturnType() {
         String text = """
                 import java.util.List;
@@ -140,7 +140,7 @@ class ExpressionTypeResolverCharacterizationTest {
     }
 
     @Test
-    @Disabled("Improvement target — null-safe access — see #8")
+    @Disabled("Requires VisibleSymbols to declare 'p' as Person + null-safe normalization — see #7")
     void nullSafeAccess() {
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -158,7 +158,7 @@ class ExpressionTypeResolverCharacterizationTest {
     }
 
     @Test
-    @Disabled("Improvement target — array indexed access — see #8")
+    @Disabled("Requires VisibleSymbols to declare 'arr' as String[] — see #7")
     void arrayIndexedAccess() {
         String text = """
                 unit MyUnit;
@@ -173,7 +173,6 @@ class ExpressionTypeResolverCharacterizationTest {
     }
 
     @Test
-    @Disabled("Improvement target — caret in middle of document — see #8")
     void caretInMiddleOfDocument() {
         String text = """
                 unit MyUnit;
@@ -192,7 +191,6 @@ class ExpressionTypeResolverCharacterizationTest {
     }
 
     @Test
-    @Disabled("Improvement target — inline cast with qualified type — see #8")
     void inlineCastQualifiedType() {
         String text = """
                 unit MyUnit;
