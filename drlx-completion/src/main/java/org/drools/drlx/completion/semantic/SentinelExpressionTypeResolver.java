@@ -11,6 +11,7 @@ import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.resolution.types.ResolvedType;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.drools.drlx.parser.DrlxLexer;
 import org.drools.drlx.parser.DrlxParser;
 import org.mvel3.ClassManager;
 import org.mvel3.MVEL;
@@ -43,7 +44,11 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
 
         StringBuilder sb = new StringBuilder();
         for (int i = boundaryIndex; i <= dotTokenIndex; i++) {
-            sb.append(tokens.get(i).getText());
+            if (tokens.get(i).getType() == DrlxLexer.EXCL_DOT) {
+                sb.append(".");
+            } else {
+                sb.append(tokens.get(i).getText());
+            }
         }
         sb.append(SENTINEL);
         String repairedText = sb.toString();
