@@ -158,7 +158,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
                 rule R1 {
                     var a : /as,
                     do {
-                        Person p = new Person("John", new Address("Tokyo"));
+                        Person p = new Person("John", 0, new Address("Tokyo"));
                         p.address.
                 """;
 

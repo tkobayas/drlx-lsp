@@ -95,14 +95,29 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
         var list = new ArrayList<Declaration<?>>();
         for (var entry : symbols.entries()) {
             try {
-                String fqcn = entry.getValue().resolvedType().describe();
-                Class<?> clazz = Class.forName(fqcn, false, ClassLoader.getSystemClassLoader());
-                list.add(Declaration.of(entry.getKey(), clazz));
-            } catch (ClassNotFoundException e) {
+                Class<?> clazz = resolvedTypeToClass(entry.getValue().resolvedType());
+                if (clazz != null) {
+                    list.add(Declaration.of(entry.getKey(), clazz));
+                }
+            } catch (Exception e) {
                 logger.info("Cannot load class for declaration '{}': {}", entry.getKey(), e.getMessage());
             }
         }
         return list.toArray(new Declaration<?>[0]);
+    }
+
+    private Class<?> resolvedTypeToClass(ResolvedType type) throws ClassNotFoundException {
+        if (type.isArray()) {
+            ResolvedType componentType = type.asArrayType().getComponentType();
+            Class<?> componentClass = resolvedTypeToClass(componentType);
+            return componentClass != null ? componentClass.arrayType() : null;
+        }
+        String fqcn = type.describe();
+        int genericIdx = fqcn.indexOf('<');
+        if (genericIdx > 0) {
+            fqcn = fqcn.substring(0, genericIdx);
+        }
+        return Class.forName(fqcn, false, ClassLoader.getSystemClassLoader());
     }
 
     private Expression findSentinelScope(CompilationUnit unit) {

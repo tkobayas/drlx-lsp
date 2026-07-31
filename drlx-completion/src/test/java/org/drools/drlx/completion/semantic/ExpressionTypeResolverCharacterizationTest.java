@@ -76,7 +76,6 @@ class ExpressionTypeResolverCharacterizationTest {
     }
 
     @Test
-    @Disabled("Requires VisibleSymbols to declare 'p' as Person — see #7")
     void rhsLocalPropertyChain() {
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -87,14 +86,13 @@ class ExpressionTypeResolverCharacterizationTest {
                 rule R1 {
                     var a : /as,
                     do {
-                        Person p = new Person("John", new Address("Tokyo"));
+                        Person p = new Person("John", 0, new Address("Tokyo"));
                         p.address.
                 """;
-        assertResolvesTo(text, 9, 18, "org.drools.drlx.domain.Address");
+        assertResolvesToWithSymbols(text, 9, 18, "org.drools.drlx.domain.Address");
     }
 
     @Test
-    @Disabled("Requires VisibleSymbols to declare 'list' — see #7")
     void inlineCastSimple() {
         String text = """
                 import java.util.ArrayList;
@@ -103,9 +101,11 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do { list#ArrayList#.
+                    do {
+                        Object list = new Object();
+                        list#ArrayList#.
                 """;
-        assertResolvesTo(text, 6, 25, "java.util.ArrayList");
+        assertResolvesToWithSymbols(text, 8, 25, "java.util.ArrayList");
     }
 
     @Test
@@ -158,7 +158,6 @@ class ExpressionTypeResolverCharacterizationTest {
     // --- Improvement targets — require VisibleSymbols (#7) ---
 
     @Test
-    @Disabled("Requires VisibleSymbols to declare 'list' as List — see #7")
     void methodReturnType() {
         String text = """
                 import java.util.List;
@@ -172,11 +171,10 @@ class ExpressionTypeResolverCharacterizationTest {
                         List list = new ArrayList();
                         list.get(0).
                 """;
-        assertResolvesTo(text, 9, 20, "java.lang.Object");
+        assertResolvesToWithSymbols(text, 9, 20, "java.lang.Object");
     }
 
     @Test
-    @Disabled("Requires VisibleSymbols to declare 'p' as Person + null-safe normalization — see #7")
     void nullSafeAccess() {
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -187,14 +185,13 @@ class ExpressionTypeResolverCharacterizationTest {
                 rule R1 {
                     var a : /as,
                     do {
-                        Person p = new Person("John", new Address("Tokyo"));
+                        Person p = new Person("John", 0, new Address("Tokyo"));
                         p!.address!.
                 """;
-        assertResolvesTo(text, 9, 20, "org.drools.drlx.domain.Address");
+        assertResolvesToWithSymbols(text, 9, 20, "org.drools.drlx.domain.Address");
     }
 
     @Test
-    @Disabled("Requires VisibleSymbols to declare 'arr' as String[] — see #7")
     void arrayIndexedAccess() {
         String text = """
                 unit MyUnit;
@@ -205,7 +202,7 @@ class ExpressionTypeResolverCharacterizationTest {
                         String[] arr = new String[]{"a","b"};
                         arr[0].
                 """;
-        assertResolvesTo(text, 6, 15, "java.lang.String");
+        assertResolvesToWithSymbols(text, 6, 15, "java.lang.String");
     }
 
     @Test
@@ -284,6 +281,29 @@ class ExpressionTypeResolverCharacterizationTest {
                 .as("Expected type %s at line %d col %d", expectedFqcn, line, col)
                 .isPresent();
         assertThat(result.get().resolvedType().describe()).isEqualTo(expectedFqcn);
+    }
+
+    private void assertResolvesToWithSymbols(String text, int line, int col, String expectedFqcn) {
+        Optional<SemanticType> result = resolveAtWithVisibleSymbols(text, line, col);
+        assertThat(result)
+                .as("Expected type %s at line %d col %d", expectedFqcn, line, col)
+                .isPresent();
+        assertThat(result.get().resolvedType().describe()).isEqualTo(expectedFqcn);
+    }
+
+    private Optional<SemanticType> resolveAtWithVisibleSymbols(String text, int line, int col) {
+        ANTLRInputStream input = new ANTLRInputStream(text);
+        DrlxLexer lexer = new DrlxLexer(input);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        DrlxParser parser = new DrlxParser(tokens);
+        ParseTree tree = parser.drlxStart();
+
+        int caretTokenIndex = computeTokenIndex(parser, line + 1, col);
+        CompletionContext ctx = model.createContext(parser, tree, caretTokenIndex);
+        VisibleSymbols symbols = ctx.buildVisibleSymbols();
+        CompletionExpression expr = CompletionExpression.fromCaretPosition(parser, tree, caretTokenIndex);
+
+        return resolver.resolve(expr, symbols, model);
     }
 
     private Optional<SemanticType> resolveAt(String text, int line, int col) {
