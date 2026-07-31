@@ -8,6 +8,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
+import org.mvel3.parser.ast.expr.NullSafeFieldAccessExpr;
 import com.github.javaparser.resolution.types.ResolvedType;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -87,6 +88,9 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
         for (Node node : unit.findAll(Node.class)) {
             if (node instanceof FieldAccessExpr fae && SENTINEL.equals(fae.getNameAsString())) {
                 return fae.getScope();
+            }
+            if (node instanceof NullSafeFieldAccessExpr nsfe && SENTINEL.equals(nsfe.getNameAsString())) {
+                return nsfe.getScope();
             }
         }
         return null;
