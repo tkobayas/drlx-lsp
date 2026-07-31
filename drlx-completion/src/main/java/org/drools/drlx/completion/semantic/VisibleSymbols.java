@@ -1,5 +1,8 @@
 package org.drools.drlx.completion.semantic;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -14,19 +17,46 @@ import java.util.Optional;
  * types inferred from entry-point generic arguments or inline casts),
  * constraint bindings, accumulate results, and consequence local variables.
  * Each symbol maps to a {@link SemanticType} representing its resolved type.
- *
- * <p>For the baseline adapter, this is empty — the existing tolerant visitor
- * does not perform scope-aware binding lookup.
  */
 public class VisibleSymbols {
 
-    private static final VisibleSymbols EMPTY = new VisibleSymbols();
+    private static final VisibleSymbols EMPTY = new VisibleSymbols(Collections.emptyMap());
+
+    private final Map<String, SemanticType> symbols;
+
+    private VisibleSymbols(Map<String, SemanticType> symbols) {
+        this.symbols = symbols;
+    }
 
     public static VisibleSymbols empty() {
         return EMPTY;
     }
 
     public Optional<SemanticType> lookup(String name) {
-        return Optional.empty();
+        return Optional.ofNullable(symbols.get(name));
+    }
+
+    public Iterable<Map.Entry<String, SemanticType>> entries() {
+        return symbols.entrySet();
+    }
+
+    public boolean isEmpty() {
+        return symbols.isEmpty();
+    }
+
+    public static class Builder {
+        private final Map<String, SemanticType> map = new LinkedHashMap<>();
+
+        public Builder add(String name, SemanticType type) {
+            map.put(name, type);
+            return this;
+        }
+
+        public VisibleSymbols build() {
+            if (map.isEmpty()) {
+                return EMPTY;
+            }
+            return new VisibleSymbols(new LinkedHashMap<>(map));
+        }
     }
 }

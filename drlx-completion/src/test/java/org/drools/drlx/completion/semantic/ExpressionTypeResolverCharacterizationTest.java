@@ -2,6 +2,8 @@ package org.drools.drlx.completion.semantic;
 
 import java.util.Optional;
 
+import com.github.javaparser.resolution.declarations.ResolvedReferenceTypeDeclaration;
+import com.github.javaparser.resolution.model.typesystem.ReferenceTypeImpl;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
@@ -117,6 +119,40 @@ class ExpressionTypeResolverCharacterizationTest {
                     invalid broken {{ code
                 """;
         assertResolvesTo(text, 4, 16, "java.lang.System");
+    }
+
+    @Test
+    void resolverWithVisibleSymbolsResolvesVariable() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do { p.address.
+                """;
+
+        ResolvedReferenceTypeDeclaration personDecl =
+                model.typeSolver().solveType("org.drools.drlx.domain.Person");
+        SemanticType personType = SemanticType.value(new ReferenceTypeImpl(personDecl));
+
+        VisibleSymbols symbols = new VisibleSymbols.Builder()
+                .add("p", personType)
+                .build();
+
+        ANTLRInputStream input = new ANTLRInputStream(text);
+        DrlxLexer lexer = new DrlxLexer(input);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        DrlxParser parser = new DrlxParser(tokens);
+        ParseTree tree = parser.drlxStart();
+        int caretTokenIndex = computeTokenIndex(parser, 7 + 1, 19);
+        CompletionExpression expr = CompletionExpression.fromCaretPosition(parser, tree, caretTokenIndex);
+
+        Optional<SemanticType> result = resolver.resolve(expr, symbols, model);
+        assertThat(result).isPresent();
+        assertThat(result.get().resolvedType().describe()).isEqualTo("org.drools.drlx.domain.Address");
     }
 
     // --- Improvement targets — require VisibleSymbols (#7) ---

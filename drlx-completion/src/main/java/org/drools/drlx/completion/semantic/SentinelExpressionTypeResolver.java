@@ -1,5 +1,6 @@
 package org.drools.drlx.completion.semantic;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -19,6 +20,7 @@ import org.mvel3.MVEL;
 import org.mvel3.MVELCompiler;
 import org.mvel3.Type;
 import org.mvel3.transpiler.TranspiledResult;
+import org.mvel3.transpiler.context.Declaration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +59,8 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
 
         try {
             Set<String> imports = extractImports(expression.parseTree());
-            var builder = MVEL.map().<Object>out(Type.OBJECT)
+            Declaration<?>[] declarations = toDeclarations(symbols);
+            var builder = MVEL.map(declarations).<Object>out(Type.OBJECT)
                     .expression(repairedText)
                     .classManager(new ClassManager())
                     .classLoader(ClassLoader.getSystemClassLoader());
@@ -82,6 +85,24 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
             logger.info("Failed to resolve via sentinel: {}", e.getMessage());
             return Optional.empty();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Declaration<?>[] toDeclarations(VisibleSymbols symbols) {
+        if (symbols.isEmpty()) {
+            return new Declaration<?>[0];
+        }
+        var list = new ArrayList<Declaration<?>>();
+        for (var entry : symbols.entries()) {
+            try {
+                String fqcn = entry.getValue().resolvedType().describe();
+                Class<?> clazz = Class.forName(fqcn, false, ClassLoader.getSystemClassLoader());
+                list.add(Declaration.of(entry.getKey(), clazz));
+            } catch (ClassNotFoundException e) {
+                logger.info("Cannot load class for declaration '{}': {}", entry.getKey(), e.getMessage());
+            }
+        }
+        return list.toArray(new Declaration<?>[0]);
     }
 
     private Expression findSentinelScope(CompilationUnit unit) {
