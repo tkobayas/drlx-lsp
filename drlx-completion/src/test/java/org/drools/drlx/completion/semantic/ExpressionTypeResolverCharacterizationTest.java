@@ -238,9 +238,18 @@ class ExpressionTypeResolverCharacterizationTest {
     // --- @Disabled: requires VisibleSymbols (#7) or Maven classpath (#6) ---
 
     @Test
-    @Disabled("Requires unit class resolution — see #7 ENTRY_POINT")
     void entryPointTypeInference() {
-        // var p : /persons with DataSource<Person> persons in unit class
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { p.
+                """;
+        assertResolvesToWithSymbols(text, 7, 11, "org.drools.drlx.domain.Person");
     }
 
     @Test

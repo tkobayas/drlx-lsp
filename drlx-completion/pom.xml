@@ -63,6 +63,12 @@
             <version>${version.ch.qos.logback}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-ruleunits-api</artifactId>
+            <version>10.2.0</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 

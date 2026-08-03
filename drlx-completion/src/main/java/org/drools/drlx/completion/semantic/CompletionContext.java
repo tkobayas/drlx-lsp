@@ -1,5 +1,7 @@
 package org.drools.drlx.completion.semantic;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -180,6 +182,9 @@ public class CompletionContext {
                 if (!"var".equals(typeName)) {
                     SemanticType st = resolveTypeToSemanticType(typeName);
                     if (st != null) builder.add(bindName, st);
+                } else {
+                    SemanticType inferred = inferVarBindingType(bound);
+                    if (inferred != null) builder.add(bindName, inferred);
                 }
             }
             return;
@@ -187,6 +192,39 @@ public class CompletionContext {
         for (int i = 0; i < node.getChildCount(); i++) {
             collectBoundOopathFromTree(node.getChild(i), builder);
         }
+    }
+
+    private SemanticType inferVarBindingType(BoundOopathContext bound) {
+        var oopathExpr = bound.oopathExpression();
+        if (oopathExpr == null) return null;
+        OopathRootContext root = oopathExpr.oopathRoot();
+        if (root == null || root.identifier(0) == null) return null;
+        String entryPointName = root.identifier(0).getText();
+        return resolveEntryPointType(entryPointName);
+    }
+
+    SemanticType resolveEntryPointType(String entryPointName) {
+        String unitClass = unitClassName();
+        if (unitClass == null) return null;
+        String unitFqcn = resolveToFqcn(unitClass);
+        if (unitFqcn == null) unitFqcn = unitClass;
+        try {
+            Class<?> clazz = Class.forName(unitFqcn, false, ClassLoader.getSystemClassLoader());
+            for (Field field : clazz.getDeclaredFields()) {
+                if (field.getName().equals(entryPointName)) {
+                    java.lang.reflect.Type genericType = field.getGenericType();
+                    if (genericType instanceof ParameterizedType pt) {
+                        java.lang.reflect.Type[] typeArgs = pt.getActualTypeArguments();
+                        if (typeArgs.length > 0 && typeArgs[0] instanceof Class<?> elementClass) {
+                            return resolveTypeToSemanticType(elementClass.getName());
+                        }
+                    }
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            logger.debug("Cannot load unit class '{}': {}", unitFqcn, e.getMessage());
+        }
+        return null;
     }
 
     private void extractLocalVariables(RuleDeclarationContext rule, VisibleSymbols.Builder builder) {
