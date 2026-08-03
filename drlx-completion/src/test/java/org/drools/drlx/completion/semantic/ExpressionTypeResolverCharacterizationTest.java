@@ -244,21 +244,57 @@ class ExpressionTypeResolverCharacterizationTest {
     }
 
     @Test
-    @Disabled("Requires VisibleSymbols — see #7")
     void bindingsFromEarlierPatterns() {
-        // var p : /persons, p. should offer Person members
+        String text = """
+                import org.drools.drlx.domain.Person;
+
+                unit MyUnit;
+
+                rule R1 {
+                    Person p : /persons,
+                    do { p.
+                """;
+        assertResolvesToWithSymbols(text, 6, 11, "org.drools.drlx.domain.Person");
     }
 
     @Test
-    @Disabled("Requires VisibleSymbols — see #7")
     void noLeakageFromLaterPatterns() {
-        // binding from rule R2 should not appear in rule R1
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+
+                unit MyUnit;
+
+                rule R1 {
+                    Person p : /persons,
+                    do { p.
+                }
+
+                rule R2 {
+                    Address a : /addresses,
+                    do { a.getCity(); }
+                }
+                """;
+        Optional<SemanticType> result = resolveAtWithVisibleSymbols(text, 7, 11);
+        assertThat(result).isPresent();
+        assertThat(result.get().resolvedType().describe()).isEqualTo("org.drools.drlx.domain.Person");
     }
 
     @Test
-    @Disabled("Requires VisibleSymbols — see #7")
     void shadowedLocalVariables() {
-        // inner scope shadows outer
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+
+                unit MyUnit;
+
+                rule R1 {
+                    Person p : /persons,
+                    do {
+                        Address p = new Address();
+                        p.
+                """;
+        assertResolvesToWithSymbols(text, 9, 10, "org.drools.drlx.domain.Address");
     }
 
     @Test
