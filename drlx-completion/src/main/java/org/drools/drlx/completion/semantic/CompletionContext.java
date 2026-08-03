@@ -19,6 +19,8 @@ import org.drools.drlx.parser.DrlxParser.BoundOopathContext;
 import org.drools.drlx.parser.DrlxParser.DrlxCompilationUnitContext;
 import org.drools.drlx.parser.DrlxParser.ImportDeclarationContext;
 import org.drools.drlx.parser.DrlxParser.LocalVariableDeclarationContext;
+import org.drools.drlx.parser.DrlxParser.OopathChunkContext;
+import org.drools.drlx.parser.DrlxParser.OopathExpressionContext;
 import org.drools.drlx.parser.DrlxParser.OopathRootContext;
 import org.drools.drlx.parser.DrlxParser.RuleConsequenceContext;
 import org.drools.drlx.parser.DrlxParser.RuleDeclarationContext;
@@ -133,6 +135,7 @@ public class CompletionContext {
         extractRuleParameters(enclosingRule, builder);
         extractOopathBindings(enclosingRule, builder);
         extractLocalVariables(enclosingRule, builder);
+        extractOopathConstraintProperties(enclosingRule, builder);
         return builder.build();
     }
 
@@ -225,6 +228,119 @@ public class CompletionContext {
             logger.debug("Cannot load unit class '{}': {}", unitFqcn, e.getMessage());
         }
         return null;
+    }
+
+    private void extractOopathConstraintProperties(RuleDeclarationContext rule, VisibleSymbols.Builder builder) {
+        if (rule.ruleBody() == null) return;
+        findOopathConstraintAtCaret(rule, builder);
+    }
+
+    private void findOopathConstraintAtCaret(ParseTree node, VisibleSymbols.Builder builder) {
+        if (node instanceof OopathExpressionContext oopathExpr) {
+            processOopathExpressionForConstraint(oopathExpr, builder);
+            return;
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            findOopathConstraintAtCaret(node.getChild(i), builder);
+        }
+    }
+
+    private void processOopathExpressionForConstraint(OopathExpressionContext oopathExpr, VisibleSymbols.Builder builder) {
+        OopathRootContext root = oopathExpr.oopathRoot();
+        if (root == null || root.identifier(0) == null) return;
+
+        String rootName = root.identifier(0).getText();
+        SemanticType rootType = resolveEntryPointType(rootName);
+        if (rootType == null) {
+            if (oopathExpr.getParent() instanceof BoundOopathContext bound && bound.identifier().size() >= 2) {
+                String typeName = bound.identifier(0).getText();
+                if (!"var".equals(typeName)) {
+                    rootType = resolveTypeToSemanticType(typeName);
+                }
+            }
+        }
+        if (rootType == null) return;
+
+        SemanticType currentType = rootType;
+        List<OopathChunkContext> chunks = oopathExpr.oopathChunk();
+        for (int ci = 0; ci < chunks.size(); ci++) {
+            OopathChunkContext chunk = chunks.get(ci);
+            String chunkName = chunk.identifier(0).getText();
+            SemanticType chunkType = resolvePropertyType(currentType, chunkName);
+            if (chunkType == null) break;
+
+            boolean isLastChunk = (ci == chunks.size() - 1);
+            int chunkStart = chunk.getStart().getTokenIndex();
+            int chunkStop = chunk.getStop() != null ? chunk.getStop().getTokenIndex() : Integer.MAX_VALUE;
+
+            if ((chunkStart <= caretTokenIndex && chunkStop >= caretTokenIndex) ||
+                    (isLastChunk && chunkStart <= caretTokenIndex)) {
+                addPropertiesAsSymbols(chunkType, builder);
+                return;
+            }
+            currentType = chunkType;
+        }
+    }
+
+    private SemanticType resolvePropertyType(SemanticType ownerType, String propertyName) {
+        if (!ownerType.isReferenceType()) return null;
+        try {
+            var refType = ownerType.resolvedType().asReferenceType();
+            var typeDecl = refType.getTypeDeclaration().orElse(null);
+            if (typeDecl == null) return null;
+
+            String getterName = "get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
+            for (var method : typeDecl.getDeclaredMethods()) {
+                if (method.getName().equals(getterName) && method.getNumberOfParams() == 0) {
+                    return SemanticType.value(method.getReturnType());
+                }
+            }
+            for (var field : typeDecl.getAllFields()) {
+                if (field.getName().equals(propertyName)) {
+                    return SemanticType.value(field.getType());
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Cannot resolve property '{}': {}", propertyName, e.getMessage());
+        }
+        return null;
+    }
+
+    private void addPropertiesAsSymbols(SemanticType ownerType, VisibleSymbols.Builder builder) {
+        if (!ownerType.isReferenceType()) return;
+        try {
+            var refType = ownerType.resolvedType().asReferenceType();
+            var typeDecl = refType.getTypeDeclaration().orElse(null);
+            if (typeDecl == null) return;
+
+            for (var field : typeDecl.getAllFields()) {
+                try {
+                    builder.add(field.getName(), SemanticType.value(field.getType()));
+                } catch (Exception e) {
+                    logger.debug("Cannot resolve field type '{}': {}", field.getName(), e.getMessage());
+                }
+            }
+            for (var method : typeDecl.getDeclaredMethods()) {
+                String methodName = method.getName();
+                if (method.getNumberOfParams() == 0) {
+                    String propName = null;
+                    if (methodName.startsWith("get") && methodName.length() > 3) {
+                        propName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
+                    } else if (methodName.startsWith("is") && methodName.length() > 2) {
+                        propName = Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
+                    }
+                    if (propName != null) {
+                        try {
+                            builder.add(propName, SemanticType.value(method.getReturnType()));
+                        } catch (Exception e) {
+                            logger.debug("Cannot resolve method return type '{}': {}", methodName, e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Cannot add properties from type: {}", e.getMessage());
+        }
     }
 
     private void extractLocalVariables(RuleDeclarationContext rule, VisibleSymbols.Builder builder) {

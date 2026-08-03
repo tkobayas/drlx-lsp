@@ -307,9 +307,18 @@ class ExpressionTypeResolverCharacterizationTest {
     }
 
     @Test
-    @Disabled("Requires OOPath traversal — see #7 OOPATH_CHUNK/CONSTRAINT_EXPRESSION")
     void nestedOopathChunkConstraint() {
-        // /persons/address[city.] — city belongs to Address, not Person
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons/address[city.
+                """;
+        assertResolvesToWithSymbols(text, 7, 37, "java.lang.String");
     }
 
     @Test
