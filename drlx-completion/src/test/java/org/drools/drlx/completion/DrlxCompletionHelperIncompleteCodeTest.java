@@ -103,7 +103,6 @@ class DrlxCompletionHelperIncompleteCodeTest {
     }
 
     @Test
-    @Disabled("Requires VisibleSymbols to declare 'list' — see #7")
     void incompleteRule_inlineCast() {
         String text = """
                 import java.util.ArrayList;
@@ -112,18 +111,20 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var a : /as,
-                    do { list#ArrayList#.
+                    do {
+                        Object list = new Object();
+                        list#ArrayList#.
                 """;
 
         Position caretPosition = new Position();
         List<CompletionItem> result;
 
         // Test completion after 'list#ArrayList#.'
-        caretPosition.setLine(6);
-        caretPosition.setCharacter(25);
+        caretPosition.setLine(8);
+        caretPosition.setCharacter(24);
         result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("trimToSize");
-        assertThat(completionItemStrings(result)).doesNotContain("removeRange"); // 'removeRange' is a protected method, so not included in suggestions
+        assertThat(completionItemStrings(result)).doesNotContain("removeRange");
     }
 
     @Test
@@ -147,7 +148,6 @@ class DrlxCompletionHelperIncompleteCodeTest {
     }
 
     @Test
-    @Disabled("Requires VisibleSymbols to declare 'p' as Person — see #7")
     void incompleteRule_PropertyAccessor() {
         String text = """
                 import org.drools.drlx.domain.Person;

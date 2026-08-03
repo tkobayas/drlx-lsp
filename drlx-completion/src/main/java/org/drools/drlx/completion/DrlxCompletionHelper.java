@@ -97,7 +97,8 @@ public class DrlxCompletionHelper {
         CompletionExpression expression = CompletionExpression.fromCaretPosition(
                 ctx.parser(), ctx.parseTree(), ctx.caretTokenIndex());
 
-        Optional<SemanticType> resolved = resolver.resolve(expression, VisibleSymbols.empty(), model);
+        VisibleSymbols symbols = ctx.buildVisibleSymbols();
+        Optional<SemanticType> resolved = resolver.resolve(expression, symbols, model);
 
         if (resolved.isPresent()) {
             List<CompletionItem> items = memberProvider.completions(resolved.get());
