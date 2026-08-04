@@ -3,6 +3,7 @@ package org.drools.drlx.lsp.server;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.drools.drlx.completion.semantic.CurrentClassloaderProvider;
@@ -12,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
+import org.eclipse.lsp4j.MessageParams;
+import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -48,19 +51,38 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
     public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
         String rootUri = params.getRootUri();
         logger.info("initialize: rootUri={}", rootUri);
+
         if (rootUri != null) {
             try {
                 Path workspaceRoot = Paths.get(URI.create(rootUri));
                 logger.info("initialize: workspaceRoot={}", workspaceRoot);
-                CurrentClassloaderProvider provider = new CurrentClassloaderProvider(workspaceRoot);
-                logger.info("initialize: classpathEntries={}", provider.classpathEntries());
-                model.rebuild(provider);
+
+                // Phase 1: instant — target/classes only (no Maven invocation)
+                Set<Path> buildOutputDirs = MavenClasspathResolver.resolveBuildOutputDirs(workspaceRoot);
+                logger.info("initialize phase 1: buildOutputDirs={}", buildOutputDirs);
+                model.rebuild(new MavenClasspathProvider(buildOutputDirs));
+
+                // Phase 2: background — full Maven dependency resolution
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        logger.info("initialize phase 2: resolving Maven classpath...");
+                        Set<Path> fullClasspath = MavenClasspathResolver.resolve(workspaceRoot);
+                        logger.info("initialize phase 2: resolved {} classpath entries", fullClasspath.size());
+                        model.rebuild(new MavenClasspathProvider(fullClasspath));
+                    } catch (Exception e) {
+                        logger.error("initialize phase 2: Maven classpath resolution failed", e);
+                        if (client != null) {
+                            client.showMessage(new MessageParams(MessageType.Info,
+                                    "Maven classpath resolution failed; completions limited to project classes."));
+                        }
+                    }
+                });
             } catch (Exception e) {
-                logger.error("initialize: failed to rebuild with workspace root", e);
+                logger.error("initialize: failed to set up workspace classpath", e);
             }
         }
 
-        final InitializeResult initializeResult = new InitializeResult(new ServerCapabilities());
+        InitializeResult initializeResult = new InitializeResult(new ServerCapabilities());
         initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
         CompletionOptions completionOptions = new CompletionOptions();
         initializeResult.getCapabilities().setCompletionProvider(completionOptions);

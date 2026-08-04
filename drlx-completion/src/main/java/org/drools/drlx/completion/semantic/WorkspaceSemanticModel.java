@@ -21,8 +21,8 @@ public class WorkspaceSemanticModel implements WorkspaceTypes {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkspaceSemanticModel.class);
 
-    private CombinedTypeSolver typeSolver;
-    private ClassLoader projectClassLoader;
+    private volatile CombinedTypeSolver typeSolver;
+    private volatile ClassLoader projectClassLoader;
 
     public WorkspaceSemanticModel(ClasspathProvider classpathProvider) {
         rebuild(classpathProvider);
