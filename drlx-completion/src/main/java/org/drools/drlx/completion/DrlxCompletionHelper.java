@@ -38,6 +38,7 @@ public class DrlxCompletionHelper {
     private final WorkspaceSemanticModel model;
     private final ExpressionTypeResolver resolver;
     private final MemberCompletionProvider memberProvider;
+    private List<String> lastDiagnostics = List.of();
 
     public DrlxCompletionHelper(WorkspaceSemanticModel model,
                                 ExpressionTypeResolver resolver,
@@ -80,6 +81,9 @@ public class DrlxCompletionHelper {
         if (site.needsSemanticCompletions()) {
             CompletionContext ctx = model.createContext(parser, parseTree, caretTokenIndex);
             items.addAll(createSemanticCompletions(site, ctx));
+            lastDiagnostics = ctx.diagnostics();
+        } else {
+            lastDiagnostics = List.of();
         }
 
         // 3. Deduplicate by (insertText, kind)
@@ -149,6 +153,10 @@ public class DrlxCompletionHelper {
         }
 
         return tokenIndex;
+    }
+
+    public List<String> lastDiagnostics() {
+        return lastDiagnostics;
     }
 
     public static List<String> completionItemStrings(List<CompletionItem> result) {

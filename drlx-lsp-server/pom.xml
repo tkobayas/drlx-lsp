@@ -43,6 +43,19 @@
 
         <!-- Test dependencies -->
         <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drlx-completion</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-ruleunits-api</artifactId>
+            <version>${version.org.drools}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${version.org.junit}</version>

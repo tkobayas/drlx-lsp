@@ -58,12 +58,14 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
         logger.info("Repaired expression: [{}]", repairedText);
 
         try {
+            ClassLoader cl = workspaceTypes instanceof WorkspaceSemanticModel wsm
+                    ? wsm.projectClassLoader() : ClassLoader.getSystemClassLoader();
             Set<String> imports = extractImports(expression.parseTree());
-            Declaration<?>[] declarations = toDeclarations(symbols);
+            Declaration<?>[] declarations = toDeclarations(symbols, cl);
             var builder = MVEL.map(declarations).<Object>out(Type.OBJECT)
                     .expression(repairedText)
                     .classManager(new ClassManager())
-                    .classLoader(ClassLoader.getSystemClassLoader());
+                    .classLoader(cl);
             if (!imports.isEmpty()) {
                 builder.imports(imports);
             }
@@ -88,14 +90,14 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
     }
 
     @SuppressWarnings("unchecked")
-    private Declaration<?>[] toDeclarations(VisibleSymbols symbols) {
+    private Declaration<?>[] toDeclarations(VisibleSymbols symbols, ClassLoader cl) {
         if (symbols.isEmpty()) {
             return new Declaration<?>[0];
         }
         var list = new ArrayList<Declaration<?>>();
         for (var entry : symbols.entries()) {
             try {
-                Class<?> clazz = resolvedTypeToClass(entry.getValue().resolvedType());
+                Class<?> clazz = resolvedTypeToClass(entry.getValue().resolvedType(), cl);
                 if (clazz != null) {
                     list.add(Declaration.of(entry.getKey(), clazz));
                 }
@@ -106,10 +108,10 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
         return list.toArray(new Declaration<?>[0]);
     }
 
-    private Class<?> resolvedTypeToClass(ResolvedType type) throws ClassNotFoundException {
+    private Class<?> resolvedTypeToClass(ResolvedType type, ClassLoader cl) throws ClassNotFoundException {
         if (type.isArray()) {
             ResolvedType componentType = type.asArrayType().getComponentType();
-            Class<?> componentClass = resolvedTypeToClass(componentType);
+            Class<?> componentClass = resolvedTypeToClass(componentType, cl);
             return componentClass != null ? componentClass.arrayType() : null;
         }
         String fqcn = type.describe();
@@ -117,7 +119,7 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
         if (genericIdx > 0) {
             fqcn = fqcn.substring(0, genericIdx);
         }
-        return Class.forName(fqcn, false, ClassLoader.getSystemClassLoader());
+        return Class.forName(fqcn, false, cl);
     }
 
     private Expression findSentinelScope(CompilationUnit unit) {

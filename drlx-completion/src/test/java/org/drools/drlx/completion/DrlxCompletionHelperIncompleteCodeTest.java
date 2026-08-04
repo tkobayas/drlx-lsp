@@ -148,6 +148,27 @@ class DrlxCompletionHelperIncompleteCodeTest {
     }
 
     @Test
+    void incompleteRule_entryPointBinding() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { p.
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(7);
+        caretPosition.setCharacter(11); // After 'p.'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("age", "name", "address", "getAge", "getName", "getAddress");
+    }
+
+    @Test
     void incompleteRule_PropertyAccessor() {
         String text = """
                 import org.drools.drlx.domain.Person;

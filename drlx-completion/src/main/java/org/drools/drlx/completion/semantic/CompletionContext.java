@@ -45,6 +45,7 @@ public class CompletionContext {
     private boolean unitClassNameResolved;
     private Set<String> imports;
     private List<String> entryPointNames;
+    private final List<String> diagnostics = new ArrayList<>();
 
     CompletionContext(WorkspaceSemanticModel model, DrlxParser parser, ParseTree tree, int caretTokenIndex) {
         this.model = model;
@@ -67,6 +68,10 @@ public class CompletionContext {
 
     public ParseTree parseTree() {
         return tree;
+    }
+
+    public List<String> diagnostics() {
+        return diagnostics;
     }
 
     public String unitClassName() {
@@ -211,8 +216,9 @@ public class CompletionContext {
         if (unitClass == null) return null;
         String unitFqcn = resolveToFqcn(unitClass);
         if (unitFqcn == null) unitFqcn = unitClass;
+        logger.info("resolveEntryPointType: unitFqcn={}, classLoader={}", unitFqcn, model.projectClassLoader());
         try {
-            Class<?> clazz = Class.forName(unitFqcn, false, ClassLoader.getSystemClassLoader());
+            Class<?> clazz = Class.forName(unitFqcn, false, model.projectClassLoader());
             for (Field field : clazz.getDeclaredFields()) {
                 if (field.getName().equals(entryPointName)) {
                     java.lang.reflect.Type genericType = field.getGenericType();
@@ -226,6 +232,11 @@ public class CompletionContext {
             }
         } catch (ClassNotFoundException e) {
             logger.debug("Cannot load unit class '{}': {}", unitFqcn, e.getMessage());
+            diagnostics.add("Unit class '" + unitFqcn + "' not found on classpath. Entry-point type inference is not available.");
+        } catch (NoClassDefFoundError e) {
+            logger.debug("Cannot load unit class '{}' — missing dependency: {}", unitFqcn, e.getMessage());
+            diagnostics.add("Unit class '" + unitFqcn + "' found but a dependency is missing: " + e.getMessage()
+                    + ". Ensure all dependencies are compiled (mvn compile dependency:copy-dependencies).");
         }
         return null;
     }

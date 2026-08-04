@@ -1,9 +1,14 @@
 package org.drools.drlx.lsp.server;
 
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 
 import org.drools.drlx.completion.semantic.CurrentClassloaderProvider;
 import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
@@ -16,13 +21,16 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 
 public class DrlxLspServer implements LanguageServer, LanguageClientAware {
 
+    private static final Logger logger = LoggerFactory.getLogger(DrlxLspServer.class);
+
     private final DrlxLspDocumentService textService;
     private final WorkspaceService workspaceService;
+    private final WorkspaceSemanticModel model;
 
     private LanguageClient client;
 
     public DrlxLspServer() {
-        WorkspaceSemanticModel model = new WorkspaceSemanticModel(new CurrentClassloaderProvider());
+        model = new WorkspaceSemanticModel(new CurrentClassloaderProvider());
         textService = new DrlxLspDocumentService(this, model);
         workspaceService = new DrlxLspWorkspaceService();
     }
@@ -38,10 +46,21 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
 
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
-        // Initialize the InitializeResult for this LS.
-        final InitializeResult initializeResult = new InitializeResult(new ServerCapabilities());
+        String rootUri = params.getRootUri();
+        logger.info("initialize: rootUri={}", rootUri);
+        if (rootUri != null) {
+            try {
+                Path workspaceRoot = Paths.get(URI.create(rootUri));
+                logger.info("initialize: workspaceRoot={}", workspaceRoot);
+                CurrentClassloaderProvider provider = new CurrentClassloaderProvider(workspaceRoot);
+                logger.info("initialize: classpathEntries={}", provider.classpathEntries());
+                model.rebuild(provider);
+            } catch (Exception e) {
+                logger.error("initialize: failed to rebuild with workspace root", e);
+            }
+        }
 
-        // Set the capabilities of the LS to inform the client.
+        final InitializeResult initializeResult = new InitializeResult(new ServerCapabilities());
         initializeResult.getCapabilities().setTextDocumentSync(TextDocumentSyncKind.Full);
         CompletionOptions completionOptions = new CompletionOptions();
         initializeResult.getCapabilities().setCompletionProvider(completionOptions);

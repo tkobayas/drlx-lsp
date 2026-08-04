@@ -1,13 +1,30 @@
 package org.drools.drlx.completion.semantic;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class CurrentClassloaderProvider implements ClasspathProvider {
+
+    private static final Logger logger = LoggerFactory.getLogger(CurrentClassloaderProvider.class);
+
+    private Path workspaceRoot;
+
+    public CurrentClassloaderProvider() {
+    }
+
+    public CurrentClassloaderProvider(Path workspaceRoot) {
+        this.workspaceRoot = workspaceRoot;
+    }
 
     @Override
     public Set<Path> classpathEntries() {
@@ -38,6 +55,24 @@ public class CurrentClassloaderProvider implements ClasspathProvider {
                 }
             }
         }
+        if (workspaceRoot != null) {
+            Path targetClasses = workspaceRoot.resolve("target/classes");
+            logger.info("workspaceRoot={}, targetClasses={}, exists={}", workspaceRoot, targetClasses, Files.isDirectory(targetClasses));
+            if (Files.isDirectory(targetClasses)) {
+                entries.add(targetClasses);
+            }
+            Path targetDependency = workspaceRoot.resolve("target/dependency");
+            if (Files.isDirectory(targetDependency)) {
+                try (DirectoryStream<Path> jars = Files.newDirectoryStream(targetDependency, "*.jar")) {
+                    for (Path jar : jars) {
+                        entries.add(jar);
+                    }
+                } catch (IOException e) {
+                    logger.debug("Cannot scan target/dependency: {}", e.getMessage());
+                }
+            }
+        }
+        logger.info("classpathEntries result: {}", entries);
         return entries;
     }
 }

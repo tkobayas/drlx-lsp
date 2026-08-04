@@ -66,10 +66,27 @@
         <dependency>
             <groupId>org.drools</groupId>
             <artifactId>drools-ruleunits-api</artifactId>
-            <version>10.2.0</version>
+            <version>${version.org.drools}</version>
             <scope>test</scope>
         </dependency>
 
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

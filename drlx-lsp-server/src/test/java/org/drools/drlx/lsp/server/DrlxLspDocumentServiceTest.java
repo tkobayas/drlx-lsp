@@ -106,6 +106,29 @@ class DrlxLspDocumentServiceTest {
     }
 
     @Test
+    void getCompletionItems_entryPointBindingPropertyAccess() {
+        String drlx = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { p.
+                """;
+
+        DrlxLspDocumentService drlxLspDocumentService = getDrlxLspDocumentService(drlx);
+
+        CompletionParams completionParams = new CompletionParams();
+        completionParams.setTextDocument(new TextDocumentIdentifier("myDocument"));
+        completionParams.setPosition(new Position(7, 11)); // After 'p.'
+
+        List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
+        assertThat(completionItemStrings(result)).contains("age", "name", "address", "getAge", "getName", "getAddress");
+    }
+
+    @Test
     void getCompletionItems_incompleteRule() {
         String drlx = """
                 class Foo {
