@@ -241,6 +241,31 @@ public class CompletionContext {
         return null;
     }
 
+    public List<String> resolveEntryPointNames() {
+        String unitClass = unitClassName();
+        if (unitClass == null) return List.of();
+        String unitFqcn = resolveToFqcn(unitClass);
+        if (unitFqcn == null) unitFqcn = unitClass;
+        try {
+            Class<?> clazz = Class.forName(unitFqcn, false, model.projectClassLoader());
+            List<String> names = new ArrayList<>();
+            for (Field field : clazz.getDeclaredFields()) {
+                java.lang.reflect.Type genericType = field.getGenericType();
+                if (genericType instanceof ParameterizedType) {
+                    names.add(field.getName());
+                }
+            }
+            return names;
+        } catch (ClassNotFoundException e) {
+            logger.debug("Cannot load unit class '{}': {}", unitFqcn, e.getMessage());
+            diagnostics.add("Unit class '" + unitFqcn + "' not found on classpath. Entry-point completions are not available.");
+        } catch (NoClassDefFoundError e) {
+            logger.debug("Cannot load unit class '{}' — missing dependency: {}", unitFqcn, e.getMessage());
+            diagnostics.add("Unit class '" + unitFqcn + "' found but a dependency is missing: " + e.getMessage());
+        }
+        return List.of();
+    }
+
     private void extractOopathConstraintProperties(RuleDeclarationContext rule, VisibleSymbols.Builder builder) {
         if (rule.ruleBody() == null) return;
         findOopathConstraintAtCaret(rule, builder);

@@ -54,10 +54,11 @@ class DrlxCompletionHelperTest {
         assertThat(completionItemStrings(result)).containsOnly("IDENTIFIER"); // rule name is IDENTIFIER
 
         // Test completion in the middle of pattern - position after 'var a : /'
+        // No import for MyUnit, so entry-point names can't be resolved; only keyword '#' is offered
         caretPosition.setLine(3);
         caretPosition.setCharacter(14);
         result = helper.getCompletionItems(text, caretPosition);
-        assertThat(completionItemStrings(result)).contains("IDENTIFIER"); // datasource name is IDENTIFIER
+        assertThat(completionItemStrings(result)).doesNotContain("IDENTIFIER");
 
         // Test completion after 'var '
         caretPosition.setLine(3);
@@ -139,6 +140,44 @@ class DrlxCompletionHelperTest {
         caretPosition.setCharacter(0);
         List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("rule");
+    }
+
+    @Test
+    void entryPointCompletion_offersUnitFieldNames() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /
+                }
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(13); // after '/'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        List<String> labels = completionItemStrings(result);
+        assertThat(labels).contains("persons", "addresses");
+        assertThat(labels).doesNotContain("IDENTIFIER");
+    }
+
+    @Test
+    void entryPointCompletion_noUnitDeclaration_returnsEmpty() {
+        String text = """
+                rule R1 {
+                    var p : /
+                }
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(1);
+        caretPosition.setCharacter(12);
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        List<String> labels = completionItemStrings(result);
+        assertThat(labels).doesNotContain("persons", "addresses");
     }
 
     @Test

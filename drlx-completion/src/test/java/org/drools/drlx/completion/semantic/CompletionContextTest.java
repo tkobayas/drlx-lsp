@@ -78,6 +78,22 @@ class CompletionContextTest {
     }
 
     @Test
+    void resolveEntryPointNames_withMyUnit() {
+        parse("""
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                }
+                """);
+        WorkspaceSemanticModel model = new WorkspaceSemanticModel(new CurrentClassloaderProvider());
+        CompletionContext ctx = model.createContext(parser, tree, 0);
+
+        assertThat(ctx.resolveEntryPointNames()).containsExactlyInAnyOrder("persons", "addresses");
+    }
+
+    @Test
     void typeSolverDelegatesToModel() {
         parse(DRLX_TEXT);
         WorkspaceSemanticModel model = new WorkspaceSemanticModel(new CurrentClassloaderProvider());

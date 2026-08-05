@@ -34,6 +34,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
     @Test
     void incompleteRule_pattern() {
         String text = """
+                import org.drools.drlx.domain.MyUnit;
                 unit MyUnit;
 
                 rule R1 {
@@ -41,11 +42,11 @@ class DrlxCompletionHelperIncompleteCodeTest {
                 """;
 
         Position caretPosition = new Position();
-        caretPosition.setLine(3);
+        caretPosition.setLine(4);
         caretPosition.setCharacter(13); // After the '/'
 
         List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
-        assertThat(completionItemStrings(result)).contains("IDENTIFIER"); // datasource name is IDENTIFIER
+        assertThat(completionItemStrings(result)).contains("persons", "addresses");
     }
 
     @Test

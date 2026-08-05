@@ -93,6 +93,7 @@ public class DrlxCompletionHelper {
     private List<CompletionItem> createSemanticCompletions(CompletionSite site, CompletionContext ctx) {
         return switch (site) {
             case DOT_ACCESS -> resolveDotAccess(ctx);
+            case ENTRY_POINT -> resolveEntryPointNames(ctx);
             default -> List.of(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
         };
     }
@@ -112,6 +113,16 @@ public class DrlxCompletionHelper {
         }
 
         return List.of(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
+    }
+
+    private List<CompletionItem> resolveEntryPointNames(CompletionContext ctx) {
+        List<String> names = ctx.resolveEntryPointNames();
+        if (names.isEmpty()) {
+            return List.of();
+        }
+        return names.stream()
+                .map(name -> createCompletionItem(name, CompletionItemKind.Field))
+                .toList();
     }
 
     private List<CompletionItem> deduplicateItems(List<CompletionItem> items) {

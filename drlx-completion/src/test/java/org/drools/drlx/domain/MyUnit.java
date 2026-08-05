@@ -6,4 +6,5 @@ import org.drools.ruleunits.api.DataStore;
 public class MyUnit {
 
     public DataStore<Person> persons = DataSource.createStore();
+    public DataStore<Address> addresses = DataSource.createStore();
 }
