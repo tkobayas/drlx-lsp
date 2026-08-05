@@ -1,10 +1,13 @@
 package org.drools.drlx.domain;
 
+import java.util.List;
+
 public class Person {
 
     private String name;
     private int age;
     private Address address;
+    private List<Address> previousAddresses;
 
     public Person() {
     }
@@ -42,5 +45,13 @@ public class Person {
 
     public void setAddress(Address address) {
         this.address = address;
+    }
+
+    public List<Address> getPreviousAddresses() {
+        return previousAddresses;
+    }
+
+    public void setPreviousAddresses(List<Address> previousAddresses) {
+        this.previousAddresses = previousAddresses;
     }
 }

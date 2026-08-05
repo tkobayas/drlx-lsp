@@ -94,6 +94,7 @@ public class DrlxCompletionHelper {
         return switch (site) {
             case DOT_ACCESS -> resolveDotAccess(ctx);
             case ENTRY_POINT -> resolveEntryPointNames(ctx);
+            case OOPATH_CHUNK -> resolveOopathChunkCompletions(ctx);
             default -> List.of(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
         };
     }
@@ -122,6 +123,16 @@ public class DrlxCompletionHelper {
         }
         return names.stream()
                 .map(name -> createCompletionItem(name, CompletionItemKind.Field))
+                .toList();
+    }
+
+    private List<CompletionItem> resolveOopathChunkCompletions(CompletionContext ctx) {
+        List<String> names = ctx.resolveOopathChunkCompletions();
+        if (names.isEmpty()) {
+            return List.of();
+        }
+        return names.stream()
+                .map(name -> createCompletionItem(name, CompletionItemKind.Property))
                 .toList();
     }
 

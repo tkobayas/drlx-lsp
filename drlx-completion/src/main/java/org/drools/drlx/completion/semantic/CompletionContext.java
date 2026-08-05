@@ -266,6 +266,139 @@ public class CompletionContext {
         return List.of();
     }
 
+    public List<String> resolveOopathChunkCompletions() {
+        DrlxCompilationUnitContext cu = findDrlxCompilationUnit();
+        if (cu == null) return List.of();
+
+        RuleDeclarationContext enclosingRule = findEnclosingRule(cu);
+        if (enclosingRule == null || enclosingRule.ruleBody() == null) return List.of();
+
+        return findOopathChunkCompletionsInTree(enclosingRule.ruleBody());
+    }
+
+    private List<String> findOopathChunkCompletionsInTree(ParseTree node) {
+        if (node instanceof OopathExpressionContext oopathExpr) {
+            List<String> result = resolveOopathChunkProperties(oopathExpr);
+            if (result != null) return result;
+            return List.of();
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            List<String> result = findOopathChunkCompletionsInTree(node.getChild(i));
+            if (!result.isEmpty()) return result;
+        }
+        return List.of();
+    }
+
+    private List<String> resolveOopathChunkProperties(OopathExpressionContext oopathExpr) {
+        OopathRootContext root = oopathExpr.oopathRoot();
+        if (root == null || root.identifier(0) == null) return null;
+
+        String rootName = root.identifier(0).getText();
+        SemanticType currentType = resolveEntryPointType(rootName);
+        if (currentType == null) return null;
+
+        List<OopathChunkContext> chunks = oopathExpr.oopathChunk();
+        for (OopathChunkContext chunk : chunks) {
+            int chunkStart = chunk.getStart().getTokenIndex();
+            if (chunkStart >= caretTokenIndex) break;
+
+            String chunkName = chunk.identifier(0).getText();
+            SemanticType chunkType = resolvePropertyType(currentType, chunkName);
+            if (chunkType == null) return null;
+            SemanticType unwrapped = unwrapCollectionElementType(chunkType);
+            if (unwrapped != null) {
+                currentType = unwrapped;
+            } else {
+                currentType = chunkType;
+            }
+        }
+
+        return collectNavigableProperties(currentType);
+    }
+
+    private List<String> collectNavigableProperties(SemanticType ownerType) {
+        if (!ownerType.isReferenceType()) return List.of();
+        List<String> result = new ArrayList<>();
+        try {
+            var refType = ownerType.resolvedType().asReferenceType();
+            var typeDecl = refType.getTypeDeclaration().orElse(null);
+            if (typeDecl == null) return List.of();
+
+            Set<String> seen = new LinkedHashSet<>();
+            for (var method : typeDecl.getDeclaredMethods()) {
+                if (method.getNumberOfParams() != 0) continue;
+                String methodName = method.getName();
+                String propName = null;
+                if (methodName.startsWith("get") && methodName.length() > 3) {
+                    propName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
+                } else if (methodName.startsWith("is") && methodName.length() > 2) {
+                    propName = Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
+                }
+                if (propName != null && seen.add(propName)) {
+                    try {
+                        SemanticType propType = SemanticType.value(method.getReturnType());
+                        if (isNavigableType(propType)) {
+                            result.add(propName);
+                        }
+                    } catch (Exception e) {
+                        logger.debug("Cannot resolve method return type '{}': {}", methodName, e.getMessage());
+                    }
+                }
+            }
+            for (var field : typeDecl.getAllFields()) {
+                if (seen.add(field.getName())) {
+                    try {
+                        SemanticType fieldType = SemanticType.value(field.getType());
+                        if (isNavigableType(fieldType)) {
+                            result.add(field.getName());
+                        }
+                    } catch (Exception e) {
+                        logger.debug("Cannot resolve field type '{}': {}", field.getName(), e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Cannot collect navigable properties: {}", e.getMessage());
+        }
+        return result;
+    }
+
+    private boolean isNavigableType(SemanticType type) {
+        if (!type.isReferenceType()) return false;
+        var refType = type.resolvedType().asReferenceType();
+        String qname = refType.getQualifiedName();
+        if (qname.startsWith("java.lang.")) return false;
+        if (isCollectionType(qname)) {
+            var typeArgs = refType.typeParametersValues();
+            if (!typeArgs.isEmpty() && typeArgs.get(0).isReferenceType()) {
+                String elementQname = typeArgs.get(0).asReferenceType().getQualifiedName();
+                return !elementQname.startsWith("java.lang.");
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private SemanticType unwrapCollectionElementType(SemanticType type) {
+        if (!type.isReferenceType()) return null;
+        var refType = type.resolvedType().asReferenceType();
+        if (!isCollectionType(refType.getQualifiedName())) return null;
+        var typeArgs = refType.typeParametersValues();
+        if (typeArgs.isEmpty()) return null;
+        var elementType = typeArgs.get(0);
+        if (elementType.isReferenceType()) {
+            return SemanticType.value(elementType);
+        }
+        return null;
+    }
+
+    private static boolean isCollectionType(String qname) {
+        return qname.equals("java.util.List")
+                || qname.equals("java.util.Set")
+                || qname.equals("java.util.Collection")
+                || qname.equals("java.lang.Iterable");
+    }
+
     private void extractOopathConstraintProperties(RuleDeclarationContext rule, VisibleSymbols.Builder builder) {
         if (rule.ruleBody() == null) return;
         findOopathConstraintAtCaret(rule, builder);

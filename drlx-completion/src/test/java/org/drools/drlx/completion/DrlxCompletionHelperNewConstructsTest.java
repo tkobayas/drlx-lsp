@@ -233,9 +233,10 @@ class DrlxCompletionHelperNewConstructsTest {
                 """;
 
         // caret: /persons/|address[city == "Tokyo"],
+        // No import for MyUnit, so entry-point type can't be resolved — empty chunk completions
         Position caret = new Position(3, 21);
         List<String> items = completionItemStrings(helper.getCompletionItems(text, caret));
-        assertThat(items).containsOnly("IDENTIFIER");
+        assertThat(items).doesNotContain("IDENTIFIER");
     }
 
     // --- Window filter on pattern ---
