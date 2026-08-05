@@ -382,9 +382,60 @@ class DrlxCompletionHelperTest {
     @Test
     void testCreateCompletionItem() {
         CompletionItem item = DrlxCompletionHelper.createCompletionItem("test", org.eclipse.lsp4j.CompletionItemKind.Keyword);
-        
+
         assertThat(item.getLabel()).isEqualTo("test");
         assertThat(item.getInsertText()).isEqualTo("test");
         assertThat(item.getKind()).isEqualTo(org.eclipse.lsp4j.CompletionItemKind.Keyword);
+        assertThat(item.getSortText()).isEqualTo("1_test");
+    }
+
+    @Test
+    void testSortText_semanticBeforeKeywords() {
+        CompletionItem field = DrlxCompletionHelper.createCompletionItem("name", org.eclipse.lsp4j.CompletionItemKind.Field);
+        CompletionItem property = DrlxCompletionHelper.createCompletionItem("age", org.eclipse.lsp4j.CompletionItemKind.Property);
+        CompletionItem method = DrlxCompletionHelper.createCompletionItem("getName", org.eclipse.lsp4j.CompletionItemKind.Method);
+        CompletionItem keyword = DrlxCompletionHelper.createCompletionItem("rule", org.eclipse.lsp4j.CompletionItemKind.Keyword);
+        CompletionItem text = DrlxCompletionHelper.createCompletionItem("IDENTIFIER", org.eclipse.lsp4j.CompletionItemKind.Text);
+
+        assertThat(field.getSortText()).isEqualTo("0_name");
+        assertThat(property.getSortText()).isEqualTo("0_age");
+        assertThat(method.getSortText()).isEqualTo("0_getName");
+        assertThat(keyword.getSortText()).isEqualTo("1_rule");
+        assertThat(text.getSortText()).isEqualTo("2_IDENTIFIER");
+
+        assertThat(field.getSortText()).isLessThan(keyword.getSortText());
+        assertThat(keyword.getSortText()).isLessThan(text.getSortText());
+    }
+
+    @Test
+    void constraintCompletion_sortTextRanksSemanticAboveKeywords() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons[
+                }
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(21);
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        List<CompletionItem> semantic = result.stream()
+                .filter(i -> i.getSortText().startsWith("0_"))
+                .toList();
+        List<CompletionItem> keywords = result.stream()
+                .filter(i -> i.getSortText().startsWith("1_"))
+                .toList();
+
+        assertThat(semantic).isNotEmpty();
+        assertThat(keywords).isNotEmpty();
+        for (CompletionItem s : semantic) {
+            for (CompletionItem k : keywords) {
+                assertThat(s.getSortText()).isLessThan(k.getSortText());
+            }
+        }
     }
 }

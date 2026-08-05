@@ -166,7 +166,16 @@ public class DrlxCompletionHelper {
         completionItem.setInsertText(label);
         completionItem.setLabel(label);
         completionItem.setKind(itemKind);
+        completionItem.setSortText(sortPrefix(itemKind) + label);
         return completionItem;
+    }
+
+    private static String sortPrefix(CompletionItemKind kind) {
+        return switch (kind) {
+            case Field, Property, Method -> "0_";
+            case Keyword -> "1_";
+            default -> "2_";
+        };
     }
 
     private DrlxParser createDrlxParser(String text) {
