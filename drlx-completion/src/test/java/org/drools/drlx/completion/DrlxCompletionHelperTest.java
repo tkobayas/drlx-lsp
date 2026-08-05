@@ -301,6 +301,85 @@ class DrlxCompletionHelperTest {
     }
 
     @Test
+    void constraintCompletion_chunkConstraint_offersChunkTypeProperties() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /persons/address[
+                }
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(29); // after '/persons/address['
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        List<String> labels = completionItemStrings(result);
+        assertThat(labels).contains("city", "country", "this");
+        assertThat(labels).doesNotContain("name", "age");
+    }
+
+    @Test
+    void constraintCompletion_collectionChunk_unwrapsElementType() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /persons/previousAddresses[
+                }
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(39); // after '/persons/previousAddresses['
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        List<String> labels = completionItemStrings(result);
+        assertThat(labels).contains("city", "country", "this");
+        assertThat(labels).doesNotContain("name", "age");
+    }
+
+    @Test
+    void constraintCompletion_noUnitDeclaration_returnsEmpty() {
+        String text = """
+                rule R1 {
+                    var p : /persons[
+                }
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(1);
+        caretPosition.setCharacter(21); // after '['
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        List<String> labels = completionItemStrings(result);
+        assertThat(labels).doesNotContain("name", "age", "address");
+    }
+
+    @Test
+    void constraintCompletion_unknownEntryPoint_returnsEmpty() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /unknown[
+                }
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(21); // after '/unknown['
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        List<String> labels = completionItemStrings(result);
+        assertThat(labels).doesNotContain("name", "age", "address");
+    }
+
+    @Test
     void testCreateCompletionItem() {
         CompletionItem item = DrlxCompletionHelper.createCompletionItem("test", org.eclipse.lsp4j.CompletionItemKind.Keyword);
         
