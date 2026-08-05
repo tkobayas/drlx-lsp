@@ -281,6 +281,26 @@ class DrlxCompletionHelperTest {
     }
 
     @Test
+    void constraintCompletion_rootConstraint_offersAllProperties() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons[
+                }
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(21); // after '['
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        List<String> labels = completionItemStrings(result);
+        assertThat(labels).contains("name", "age", "address", "previousAddresses", "this");
+    }
+
+    @Test
     void testCreateCompletionItem() {
         CompletionItem item = DrlxCompletionHelper.createCompletionItem("test", org.eclipse.lsp4j.CompletionItemKind.Keyword);
         

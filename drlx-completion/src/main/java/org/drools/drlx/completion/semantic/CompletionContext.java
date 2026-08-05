@@ -276,6 +276,63 @@ public class CompletionContext {
         return findOopathChunkCompletionsInTree(enclosingRule.ruleBody());
     }
 
+    public List<String> resolveConstraintCompletions() {
+        DrlxCompilationUnitContext cu = findDrlxCompilationUnit();
+        if (cu == null) return List.of();
+
+        RuleDeclarationContext enclosingRule = findEnclosingRule(cu);
+        if (enclosingRule == null || enclosingRule.ruleBody() == null) return List.of();
+
+        return findConstraintCompletionsInTree(enclosingRule.ruleBody());
+    }
+
+    private List<String> findConstraintCompletionsInTree(ParseTree node) {
+        if (node instanceof OopathExpressionContext oopathExpr) {
+            List<String> result = resolveConstraintProperties(oopathExpr);
+            if (result != null) return result;
+            return List.of();
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            List<String> result = findConstraintCompletionsInTree(node.getChild(i));
+            if (!result.isEmpty()) return result;
+        }
+        return List.of();
+    }
+
+    private List<String> resolveConstraintProperties(OopathExpressionContext oopathExpr) {
+        OopathRootContext root = oopathExpr.oopathRoot();
+        if (root == null || root.identifier(0) == null) return null;
+
+        String rootName = root.identifier(0).getText();
+        SemanticType currentType = resolveEntryPointType(rootName);
+        if (currentType == null) return null;
+
+        for (OopathChunkContext chunk : oopathExpr.oopathChunk()) {
+            String chunkName = chunk.identifier(0).getText();
+            SemanticType chunkType = resolvePropertyType(currentType, chunkName);
+            if (chunkType == null) return null;
+            SemanticType unwrapped = unwrapCollectionElementType(chunkType);
+            if (unwrapped != null) {
+                chunkType = unwrapped;
+            }
+
+            int chunkStart = chunk.getStart().getTokenIndex();
+            int chunkStop = chunk.getStop() != null ? chunk.getStop().getTokenIndex() : Integer.MAX_VALUE;
+            if (chunkStart <= caretTokenIndex && chunkStop >= caretTokenIndex) {
+                List<String> props = collectAllProperties(chunkType);
+                props.add("this");
+                return props;
+            }
+            currentType = chunkType;
+        }
+
+        // Site is CONSTRAINT_EXPRESSION so caret is inside a [...] bracket.
+        // If no chunk matched, use currentType (root type or last walked chunk type).
+        List<String> props = collectAllProperties(currentType);
+        props.add("this");
+        return props;
+    }
+
     private List<String> findOopathChunkCompletionsInTree(ParseTree node) {
         if (node instanceof OopathExpressionContext oopathExpr) {
             List<String> result = resolveOopathChunkProperties(oopathExpr);
@@ -359,6 +416,40 @@ public class CompletionContext {
             }
         } catch (Exception e) {
             logger.debug("Cannot collect navigable properties: {}", e.getMessage());
+        }
+        return result;
+    }
+
+    private List<String> collectAllProperties(SemanticType ownerType) {
+        if (!ownerType.isReferenceType()) return List.of();
+        List<String> result = new ArrayList<>();
+        try {
+            var refType = ownerType.resolvedType().asReferenceType();
+            var typeDecl = refType.getTypeDeclaration().orElse(null);
+            if (typeDecl == null) return List.of();
+
+            Set<String> seen = new LinkedHashSet<>();
+            for (var method : typeDecl.getDeclaredMethods()) {
+                if (method.getNumberOfParams() != 0) continue;
+                String methodName = method.getName();
+                String propName = null;
+                if (methodName.startsWith("get") && methodName.length() > 3) {
+                    propName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
+                } else if (methodName.startsWith("is") && methodName.length() > 2) {
+                    propName = Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
+                }
+                if (propName != null) {
+                    seen.add(propName);
+                    result.add(propName);
+                }
+            }
+            for (var field : typeDecl.getAllFields()) {
+                if (seen.add(field.getName())) {
+                    result.add(field.getName());
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Cannot collect properties: {}", e.getMessage());
         }
         return result;
     }

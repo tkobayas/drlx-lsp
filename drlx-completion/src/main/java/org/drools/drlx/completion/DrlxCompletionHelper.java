@@ -95,6 +95,7 @@ public class DrlxCompletionHelper {
             case DOT_ACCESS -> resolveDotAccess(ctx);
             case ENTRY_POINT -> resolveEntryPointNames(ctx);
             case OOPATH_CHUNK -> resolveOopathChunkCompletions(ctx);
+            case CONSTRAINT_EXPRESSION -> resolveConstraintExpressionCompletions(ctx);
             default -> List.of(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
         };
     }
@@ -133,6 +134,18 @@ public class DrlxCompletionHelper {
         }
         return names.stream()
                 .map(name -> createCompletionItem(name, CompletionItemKind.Property))
+                .toList();
+    }
+
+    private List<CompletionItem> resolveConstraintExpressionCompletions(CompletionContext ctx) {
+        List<String> names = ctx.resolveConstraintCompletions();
+        if (names.isEmpty()) {
+            return List.of(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
+        }
+        return names.stream()
+                .map(name -> "this".equals(name)
+                        ? createCompletionItem(name, CompletionItemKind.Keyword)
+                        : createCompletionItem(name, CompletionItemKind.Property))
                 .toList();
     }
 
