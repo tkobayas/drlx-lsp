@@ -170,6 +170,63 @@ class DrlxCompletionHelperIncompleteCodeTest {
     }
 
     @Test
+    void incompleteRule_accumulateResultBinding_var() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var total = sum(/persons.age),
+                    do { total.
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(5);
+        caretPosition.setCharacter(15); // after 'total.'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("intValue", "doubleValue");
+    }
+
+    @Test
+    void incompleteRule_accumulateResultBinding_explicitType() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    Long total = count(/persons),
+                    do { total.
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(5);
+        caretPosition.setCharacter(15); // after 'total.'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("intValue", "doubleValue");
+    }
+
+    @Test
+    void incompleteRule_accumulateResultBinding_count() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var cnt = count(/persons),
+                    do { cnt.
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(5);
+        caretPosition.setCharacter(13); // after 'cnt.'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("intValue", "doubleValue");
+    }
+
+    @Test
     void incompleteRule_PropertyAccessor() {
         String text = """
                 import org.drools.drlx.domain.Person;

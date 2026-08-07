@@ -13,6 +13,7 @@ import com.github.javaparser.resolution.model.typesystem.ReferenceTypeImpl;
 import com.github.javaparser.resolution.types.ResolvedArrayType;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.drlx.parser.DrlxParser;
+import org.drools.drlx.parser.DrlxParser.AccumulateItemContext;
 import org.drools.drlx.parser.DrlxParser.BlockContext;
 import org.drools.drlx.parser.DrlxParser.BlockStatementContext;
 import org.drools.drlx.parser.DrlxParser.BoundOopathContext;
@@ -197,6 +198,18 @@ public class CompletionContext {
             }
             return;
         }
+        if (node instanceof AccumulateItemContext accItem) {
+            if (accItem.getStart().getTokenIndex() >= caretTokenIndex) return;
+            String bindName = accItem.identifier().getText();
+            if (accItem.typeType() != null) {
+                SemanticType st = resolveTypeToSemanticType(accItem.typeType().getText());
+                if (st != null) builder.add(bindName, st);
+            } else if (accItem.VAR() != null) {
+                SemanticType inferred = inferAccumulateResultType(accItem);
+                if (inferred != null) builder.add(bindName, inferred);
+            }
+            return;
+        }
         for (int i = 0; i < node.getChildCount(); i++) {
             collectBoundOopathFromTree(node.getChild(i), builder);
         }
@@ -209,6 +222,20 @@ public class CompletionContext {
         if (root == null || root.identifier(0) == null) return null;
         String entryPointName = root.identifier(0).getText();
         return resolveEntryPointType(entryPointName);
+    }
+
+    private SemanticType inferAccumulateResultType(AccumulateItemContext accItem) {
+        var accCall = accItem.accumulateCall();
+        if (accCall == null || accCall.qualifiedName() == null) return null;
+        String funcName = accCall.qualifiedName().getText();
+        String inferredType = switch (funcName) {
+            case "sum", "avg", "min", "max" -> "Number";
+            case "count" -> "Long";
+            case "collectList" -> "java.util.List";
+            case "collectSet" -> "java.util.Set";
+            default -> "Object";
+        };
+        return resolveTypeToSemanticType(inferredType);
     }
 
     SemanticType resolveEntryPointType(String entryPointName) {
