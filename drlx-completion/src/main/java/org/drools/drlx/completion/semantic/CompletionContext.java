@@ -375,6 +375,15 @@ public class CompletionContext {
         return List.of();
     }
 
+    public List<String> resolveImportedTypeNames() {
+        List<String> names = new ArrayList<>();
+        for (String fqcn : imports()) {
+            int dot = fqcn.lastIndexOf('.');
+            names.add(dot >= 0 ? fqcn.substring(dot + 1) : fqcn);
+        }
+        return names;
+    }
+
     public List<String> resolveOopathChunkCompletions() {
         DrlxCompilationUnitContext cu = findDrlxCompilationUnit();
         if (cu == null) return List.of();

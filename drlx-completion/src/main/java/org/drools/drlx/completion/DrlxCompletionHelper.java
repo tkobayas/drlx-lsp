@@ -93,6 +93,7 @@ public class DrlxCompletionHelper {
     private List<CompletionItem> createSemanticCompletions(CompletionSite site, CompletionContext ctx) {
         return switch (site) {
             case DOT_ACCESS -> resolveDotAccess(ctx);
+            case INLINE_CAST_TYPE -> resolveInlineCastTypeNames(ctx);
             case ENTRY_POINT -> resolveEntryPointNames(ctx);
             case OOPATH_CHUNK -> resolveOopathChunkCompletions(ctx);
             case CONSTRAINT_EXPRESSION -> resolveConstraintExpressionCompletions(ctx);
@@ -115,6 +116,16 @@ public class DrlxCompletionHelper {
         }
 
         return List.of(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
+    }
+
+    private List<CompletionItem> resolveInlineCastTypeNames(CompletionContext ctx) {
+        List<String> names = ctx.resolveImportedTypeNames();
+        if (names.isEmpty()) {
+            return List.of();
+        }
+        return names.stream()
+                .map(name -> createCompletionItem(name, CompletionItemKind.Class))
+                .toList();
     }
 
     private List<CompletionItem> resolveEntryPointNames(CompletionContext ctx) {
@@ -172,7 +183,7 @@ public class DrlxCompletionHelper {
 
     private static String sortPrefix(CompletionItemKind kind) {
         return switch (kind) {
-            case Field, Property, Method -> "0_";
+            case Field, Property, Method, Class -> "0_";
             case Keyword -> "1_";
             default -> "2_";
         };

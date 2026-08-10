@@ -20,6 +20,10 @@ public class CompletionContextAnalyzer {
             return CompletionSite.DOT_ACCESS;
         }
 
+        if (isHashAccess(parser, caretTokenIndex)) {
+            return CompletionSite.INLINE_CAST_TYPE;
+        }
+
         List<Integer> identifierStack = candidates.rules.get(DrlxParser.RULE_identifier);
         if (identifierStack == null) {
             return CompletionSite.UNKNOWN;
@@ -83,5 +87,12 @@ public class CompletionContextAnalyzer {
             return false;
         }
         return parser.getTokenStream().get(caretTokenIndex - 1).getType() == DrlxLexer.DOT;
+    }
+
+    private static boolean isHashAccess(DrlxParser parser, int caretTokenIndex) {
+        if (caretTokenIndex < 1) {
+            return false;
+        }
+        return parser.getTokenStream().get(caretTokenIndex - 1).getType() == DrlxLexer.HASH;
     }
 }

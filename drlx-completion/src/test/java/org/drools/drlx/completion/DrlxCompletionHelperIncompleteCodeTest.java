@@ -292,6 +292,29 @@ class DrlxCompletionHelperIncompleteCodeTest {
     }
 
     @Test
+    void incompleteRule_inlineCastTypeName() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var a : /as,
+                    do {
+                        Object obj = new Object();
+                        obj#
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(9);
+        caretPosition.setCharacter(12); // after 'obj#'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("Person", "Address");
+    }
+
+    @Test
     void incompleteRule_PropertyAccessor() {
         String text = """
                 import org.drools.drlx.domain.Person;
