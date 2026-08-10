@@ -315,6 +315,25 @@ class DrlxCompletionHelperIncompleteCodeTest {
     }
 
     @Test
+    void incompleteRule_accumulateFunctionName() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var total =\s
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(16); // after 'var total = '
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result))
+                .contains("avg", "sum", "min", "max", "count", "collectList", "collectSet");
+    }
+
+    @Test
     void incompleteRule_PropertyAccessor() {
         String text = """
                 import org.drools.drlx.domain.Person;

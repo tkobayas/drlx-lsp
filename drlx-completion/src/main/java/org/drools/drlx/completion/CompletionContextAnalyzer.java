@@ -29,6 +29,10 @@ public class CompletionContextAnalyzer {
             return CompletionSite.UNKNOWN;
         }
 
+        if (identifierStack.contains(DrlxParser.RULE_accumulateCall)) {
+            return CompletionSite.ACCUMULATE_FUNCTION;
+        }
+
         if (identifierStack.contains(DrlxParser.RULE_ruleConsequence)
                 && identifierStack.contains(DrlxParser.RULE_block)) {
             return CompletionSite.CONSEQUENCE_EXPRESSION;

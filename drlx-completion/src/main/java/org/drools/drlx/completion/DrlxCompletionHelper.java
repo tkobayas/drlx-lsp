@@ -94,6 +94,7 @@ public class DrlxCompletionHelper {
         return switch (site) {
             case DOT_ACCESS -> resolveDotAccess(ctx);
             case INLINE_CAST_TYPE -> resolveInlineCastTypeNames(ctx);
+            case ACCUMULATE_FUNCTION -> resolveAccumulateFunctionNames();
             case ENTRY_POINT -> resolveEntryPointNames(ctx);
             case OOPATH_CHUNK -> resolveOopathChunkCompletions(ctx);
             case CONSTRAINT_EXPRESSION -> resolveConstraintExpressionCompletions(ctx);
@@ -125,6 +126,15 @@ public class DrlxCompletionHelper {
         }
         return names.stream()
                 .map(name -> createCompletionItem(name, CompletionItemKind.Class))
+                .toList();
+    }
+
+    private static final List<String> ACCUMULATE_FUNCTIONS =
+            List.of("avg", "sum", "min", "max", "count", "collectList", "collectSet");
+
+    private List<CompletionItem> resolveAccumulateFunctionNames() {
+        return ACCUMULATE_FUNCTIONS.stream()
+                .map(name -> createCompletionItem(name, CompletionItemKind.Function))
                 .toList();
     }
 
