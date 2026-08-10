@@ -384,6 +384,49 @@ public class CompletionContext {
         return names;
     }
 
+    public List<String> resolveQueryParameterNames() {
+        DrlxCompilationUnitContext cu = findDrlxCompilationUnit();
+        if (cu == null) return List.of();
+
+        String rootName = findOopathRootNameAtCaret(cu);
+        if (rootName == null) return List.of();
+
+        for (RuleDeclarationContext rule : cu.ruleDeclaration()) {
+            if (rule.ruleParameterList() != null
+                    && rule.identifier() != null
+                    && rootName.equals(rule.identifier().getText())) {
+                return rule.ruleParameterList().ruleParameter().stream()
+                        .map(p -> p.identifier().getText())
+                        .toList();
+            }
+        }
+        return List.of();
+    }
+
+    private String findOopathRootNameAtCaret(DrlxCompilationUnitContext cu) {
+        RuleDeclarationContext enclosingRule = findEnclosingRule(cu);
+        if (enclosingRule == null || enclosingRule.ruleBody() == null) return null;
+        return findOopathRootNameInTree(enclosingRule.ruleBody());
+    }
+
+    private String findOopathRootNameInTree(ParseTree node) {
+        if (node instanceof OopathRootContext root) {
+            if (root.getStart() != null && root.identifier(0) != null) {
+                int rootStart = root.getStart().getTokenIndex();
+                int rootStop = root.getStop() != null ? root.getStop().getTokenIndex() + 1 : Integer.MAX_VALUE;
+                if (rootStart <= caretTokenIndex && rootStop >= caretTokenIndex) {
+                    return root.identifier(0).getText();
+                }
+            }
+            return null;
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            String found = findOopathRootNameInTree(node.getChild(i));
+            if (found != null) return found;
+        }
+        return null;
+    }
+
     public List<String> resolveOopathChunkCompletions() {
         DrlxCompilationUnitContext cu = findDrlxCompilationUnit();
         if (cu == null) return List.of();

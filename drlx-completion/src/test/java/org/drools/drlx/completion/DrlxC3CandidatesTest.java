@@ -11,6 +11,7 @@ import com.vmware.antlr4c3.CodeCompletionCore;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.drlx.parser.DrlxLexer;
 import org.drools.drlx.parser.DrlxParser;
 import org.junit.jupiter.api.Test;
@@ -51,14 +52,14 @@ class DrlxC3CandidatesTest {
 
     // --- Helpers ---
 
-    record CandidateResult(CodeCompletionCore.CandidatesCollection candidates, DrlxParser parser, int tokenIndex) {}
+    record CandidateResult(CodeCompletionCore.CandidatesCollection candidates, DrlxParser parser, int tokenIndex, ParseTree parseTree) {}
 
     private static CandidateResult collectAt(String text, int line, int col) {
         ANTLRInputStream input = new ANTLRInputStream(text);
         DrlxLexer lexer = new DrlxLexer(input);
         CommonTokenStream tokenStream = new CommonTokenStream(lexer);
         DrlxParser parser = new DrlxParser(tokenStream);
-        parser.drlxStart();
+        ParseTree parseTree = parser.drlxStart();
 
         int row = line + 1; // ANTLR uses 1-based lines
         int tokenIndex = 0;
@@ -71,7 +72,7 @@ class DrlxC3CandidatesTest {
 
         CodeCompletionCore core = new CodeCompletionCore(parser, PREFERRED_RULES, Tokens.IGNORED);
         CodeCompletionCore.CandidatesCollection candidates = core.collectCandidates(tokenIndex, null);
-        return new CandidateResult(candidates, parser, tokenIndex);
+        return new CandidateResult(candidates, parser, tokenIndex, parseTree);
     }
 
     private static Set<String> tokenNames(CandidateResult r) {
@@ -86,7 +87,7 @@ class DrlxC3CandidatesTest {
     }
 
     private static CompletionSite siteAt(CandidateResult r) {
-        return CompletionContextAnalyzer.analyze(r.candidates(), r.parser(), r.tokenIndex());
+        return CompletionContextAnalyzer.analyze(r.candidates(), r.parser(), r.tokenIndex(), r.parseTree());
     }
 
     private static List<String> ruleCallStack(CandidateResult r, int ruleIndex) {

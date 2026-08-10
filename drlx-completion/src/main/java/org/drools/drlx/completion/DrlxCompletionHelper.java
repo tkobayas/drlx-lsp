@@ -77,7 +77,7 @@ public class DrlxCompletionHelper {
                 .forEach(items::add);
 
         // 2. Additionally: semantic completions when identifier rule applies
-        CompletionSite site = CompletionContextAnalyzer.analyze(candidates, parser, caretTokenIndex);
+        CompletionSite site = CompletionContextAnalyzer.analyze(candidates, parser, caretTokenIndex, parseTree);
         if (site.needsSemanticCompletions()) {
             CompletionContext ctx = model.createContext(parser, parseTree, caretTokenIndex);
             items.addAll(createSemanticCompletions(site, ctx));
@@ -98,6 +98,7 @@ public class DrlxCompletionHelper {
             case ENTRY_POINT -> resolveEntryPointNames(ctx);
             case OOPATH_CHUNK -> resolveOopathChunkCompletions(ctx);
             case CONSTRAINT_EXPRESSION -> resolveConstraintExpressionCompletions(ctx);
+            case QUERY_PARAMETER -> resolveQueryParameterCompletions(ctx);
             default -> List.of(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
         };
     }
@@ -167,6 +168,16 @@ public class DrlxCompletionHelper {
                 .map(name -> "this".equals(name)
                         ? createCompletionItem(name, CompletionItemKind.Keyword)
                         : createCompletionItem(name, CompletionItemKind.Property))
+                .toList();
+    }
+
+    private List<CompletionItem> resolveQueryParameterCompletions(CompletionContext ctx) {
+        List<String> names = ctx.resolveQueryParameterNames();
+        if (names.isEmpty()) {
+            return List.of();
+        }
+        return names.stream()
+                .map(name -> createCompletionItem(name, CompletionItemKind.Property))
                 .toList();
     }
 

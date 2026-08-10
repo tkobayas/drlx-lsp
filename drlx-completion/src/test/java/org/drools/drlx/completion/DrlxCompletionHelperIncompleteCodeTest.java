@@ -357,4 +357,30 @@ class DrlxCompletionHelperIncompleteCodeTest {
         result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("city", "getCity", "setCity"); // `city` can be directly accessed in mvel
     }
+
+    @Test
+    void incompleteRule_queryParameterNames() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule personsByAge(int minAge, Person result) {
+                    Person p : /persons[age >= minAge],
+                    do { result = p; }
+                }
+
+                rule R1 {
+                    /personsByAge[
+                }
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(11);
+        caretPosition.setCharacter(18); // after '['
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("minAge", "result");
+    }
 }

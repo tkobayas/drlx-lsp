@@ -3,8 +3,12 @@ package org.drools.drlx.completion;
 import java.util.List;
 
 import com.vmware.antlr4c3.CodeCompletionCore;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.drlx.parser.DrlxLexer;
 import org.drools.drlx.parser.DrlxParser;
+import org.drools.drlx.parser.DrlxParser.DrlxCompilationUnitContext;
+import org.drools.drlx.parser.DrlxParser.OopathRootContext;
+import org.drools.drlx.parser.DrlxParser.RuleDeclarationContext;
 
 public class CompletionContextAnalyzer {
 
@@ -14,7 +18,8 @@ public class CompletionContextAnalyzer {
     public static CompletionSite analyze(
             CodeCompletionCore.CandidatesCollection candidates,
             DrlxParser parser,
-            int caretTokenIndex) {
+            int caretTokenIndex,
+            ParseTree parseTree) {
 
         if (isDotAccess(parser, caretTokenIndex)) {
             return CompletionSite.DOT_ACCESS;
@@ -43,6 +48,9 @@ public class CompletionContextAnalyzer {
         }
 
         if (identifierStack.contains(DrlxParser.RULE_drlxExpression)) {
+            if (isQueryInvocation(parseTree, caretTokenIndex)) {
+                return CompletionSite.QUERY_PARAMETER;
+            }
             return CompletionSite.CONSTRAINT_EXPRESSION;
         }
 
@@ -84,6 +92,48 @@ public class CompletionContextAnalyzer {
         }
 
         return CompletionSite.UNKNOWN;
+    }
+
+    private static boolean isQueryInvocation(ParseTree parseTree, int caretTokenIndex) {
+        String rootName = findEnclosingOopathRootName(parseTree, caretTokenIndex);
+        if (rootName == null) return false;
+        return findQueryByName(parseTree, rootName) != null;
+    }
+
+    private static String findEnclosingOopathRootName(ParseTree node, int caretTokenIndex) {
+        if (node instanceof OopathRootContext root) {
+            if (root.getStart() != null && root.identifier(0) != null) {
+                int rootStart = root.getStart().getTokenIndex();
+                int rootStop = root.getStop() != null ? root.getStop().getTokenIndex() + 1 : Integer.MAX_VALUE;
+                if (rootStart <= caretTokenIndex && rootStop >= caretTokenIndex) {
+                    return root.identifier(0).getText();
+                }
+            }
+            return null;
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            String found = findEnclosingOopathRootName(node.getChild(i), caretTokenIndex);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    static RuleDeclarationContext findQueryByName(ParseTree node, String name) {
+        if (node instanceof DrlxCompilationUnitContext cu) {
+            for (RuleDeclarationContext rule : cu.ruleDeclaration()) {
+                if (rule.ruleParameterList() != null
+                        && rule.identifier() != null
+                        && name.equals(rule.identifier().getText())) {
+                    return rule;
+                }
+            }
+            return null;
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            RuleDeclarationContext found = findQueryByName(node.getChild(i), name);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     private static boolean isDotAccess(DrlxParser parser, int caretTokenIndex) {
