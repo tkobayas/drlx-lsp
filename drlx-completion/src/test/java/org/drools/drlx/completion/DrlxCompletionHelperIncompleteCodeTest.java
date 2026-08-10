@@ -227,6 +227,71 @@ class DrlxCompletionHelperIncompleteCodeTest {
     }
 
     @Test
+    void incompleteRule_constraintBinding_rootChunk() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons[$addr : address],
+                    do { $addr.
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(8);
+        caretPosition.setCharacter(15); // after '$addr.'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("city", "country", "getCity", "getCountry");
+    }
+
+    @Test
+    void incompleteRule_constraintBinding_nestedChunk() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons/address[$c : city],
+                    do { $c.
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(8);
+        caretPosition.setCharacter(12); // after '$c.'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("length", "charAt");
+    }
+
+    @Test
+    void incompleteRule_constraintBinding_name() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons[$n : name],
+                    do { $n.
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(7);
+        caretPosition.setCharacter(12); // after '$n.'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("length", "charAt");
+    }
+
+    @Test
     void incompleteRule_PropertyAccessor() {
         String text = """
                 import org.drools.drlx.domain.Person;

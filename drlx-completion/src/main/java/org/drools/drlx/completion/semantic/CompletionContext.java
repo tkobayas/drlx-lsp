@@ -18,6 +18,7 @@ import org.drools.drlx.parser.DrlxParser.BlockContext;
 import org.drools.drlx.parser.DrlxParser.BlockStatementContext;
 import org.drools.drlx.parser.DrlxParser.BoundOopathContext;
 import org.drools.drlx.parser.DrlxParser.DrlxCompilationUnitContext;
+import org.drools.drlx.parser.DrlxParser.DrlxExpressionContext;
 import org.drools.drlx.parser.DrlxParser.ImportDeclarationContext;
 import org.drools.drlx.parser.DrlxParser.LocalVariableDeclarationContext;
 import org.drools.drlx.parser.DrlxParser.OopathChunkContext;
@@ -140,6 +141,7 @@ public class CompletionContext {
         VisibleSymbols.Builder builder = new VisibleSymbols.Builder();
         extractRuleParameters(enclosingRule, builder);
         extractOopathBindings(enclosingRule, builder);
+        extractConstraintBindings(enclosingRule, builder);
         extractLocalVariables(enclosingRule, builder);
         extractOopathConstraintProperties(enclosingRule, builder);
         return builder.build();
@@ -236,6 +238,86 @@ public class CompletionContext {
             default -> "Object";
         };
         return resolveTypeToSemanticType(inferredType);
+    }
+
+    private void extractConstraintBindings(RuleDeclarationContext rule, VisibleSymbols.Builder builder) {
+        if (rule.ruleBody() == null) return;
+        for (var ruleItem : rule.ruleBody().ruleItem()) {
+            if (ruleItem.getStart() != null && ruleItem.getStart().getTokenIndex() >= caretTokenIndex) continue;
+            collectConstraintBindingsFromTree(ruleItem, builder);
+        }
+    }
+
+    private void collectConstraintBindingsFromTree(ParseTree node, VisibleSymbols.Builder builder) {
+        if (node instanceof OopathExpressionContext oopathExpr) {
+            processOopathExpressionForConstraintBindings(oopathExpr, builder);
+            return;
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            collectConstraintBindingsFromTree(node.getChild(i), builder);
+        }
+    }
+
+    private void processOopathExpressionForConstraintBindings(OopathExpressionContext oopathExpr, VisibleSymbols.Builder builder) {
+        OopathRootContext root = oopathExpr.oopathRoot();
+        if (root == null || root.identifier(0) == null) return;
+
+        String rootName = root.identifier(0).getText();
+        SemanticType rootType = resolveEntryPointType(rootName);
+        if (rootType == null) {
+            if (oopathExpr.getParent() instanceof BoundOopathContext bound && bound.identifier().size() >= 2) {
+                String typeName = bound.identifier(0).getText();
+                if (!"var".equals(typeName)) {
+                    rootType = resolveTypeToSemanticType(typeName);
+                }
+            }
+        }
+        if (rootType == null) return;
+
+        extractBindingsFromDrlxExpressions(root.drlxExpression(), rootType, builder);
+
+        SemanticType currentType = rootType;
+        for (OopathChunkContext chunk : oopathExpr.oopathChunk()) {
+            if (chunk.getStart().getTokenIndex() >= caretTokenIndex) break;
+
+            String chunkName = chunk.identifier(0).getText();
+            SemanticType chunkType = resolvePropertyType(currentType, chunkName);
+            if (chunkType == null) break;
+            SemanticType unwrapped = unwrapCollectionElementType(chunkType);
+            if (unwrapped != null) chunkType = unwrapped;
+
+            extractBindingsFromDrlxExpressions(chunk.drlxExpression(), chunkType, builder);
+            currentType = chunkType;
+        }
+    }
+
+    private void extractBindingsFromDrlxExpressions(List<DrlxExpressionContext> drlxExprs, SemanticType ownerType, VisibleSymbols.Builder builder) {
+        if (drlxExprs == null) return;
+        for (DrlxExpressionContext drlxExpr : drlxExprs) {
+            if (drlxExpr.getStart().getTokenIndex() >= caretTokenIndex) continue;
+            if (drlxExpr.bind != null && drlxExpr.expression() != null) {
+                String bindName = drlxExpr.bind.getText();
+                String propName = extractLeadingPropertyName(drlxExpr.expression());
+                if (propName != null) {
+                    SemanticType propType = resolvePropertyType(ownerType, propName);
+                    if (propType != null) {
+                        builder.add(bindName, propType);
+                    }
+                }
+            }
+        }
+    }
+
+    private String extractLeadingPropertyName(DrlxParser.ExpressionContext expr) {
+        ParseTree node = expr;
+        while (node != null) {
+            if (node instanceof DrlxParser.IdentifierContext) {
+                return node.getText();
+            }
+            if (node.getChildCount() == 0) return null;
+            node = node.getChild(0);
+        }
+        return null;
     }
 
     SemanticType resolveEntryPointType(String entryPointName) {
