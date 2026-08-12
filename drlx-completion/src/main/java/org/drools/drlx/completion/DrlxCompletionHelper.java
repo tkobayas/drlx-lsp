@@ -95,6 +95,7 @@ public class DrlxCompletionHelper {
             case DOT_ACCESS -> resolveDotAccess(ctx);
             case INLINE_CAST_TYPE -> resolveInlineCastTypeNames(ctx);
             case ACCUMULATE_FUNCTION -> resolveAccumulateFunctionNames();
+            case RULE_ANNOTATION -> resolveRuleAnnotationNames();
             case ENTRY_POINT -> resolveEntryPointNames(ctx);
             case OOPATH_CHUNK -> resolveOopathChunkCompletions(ctx);
             case CONSTRAINT_EXPRESSION -> resolveConstraintExpressionCompletions(ctx);
@@ -136,6 +137,17 @@ public class DrlxCompletionHelper {
     private List<CompletionItem> resolveAccumulateFunctionNames() {
         return ACCUMULATE_FUNCTIONS.stream()
                 .map(name -> createCompletionItem(name, CompletionItemKind.Function))
+                .toList();
+    }
+
+    private static final List<String> RULE_ANNOTATIONS =
+            List.of("ActivationGroup", "DataSource", "DateEffective", "DateExpires",
+                    "Description", "Disabled", "Duration", "LockOnActive",
+                    "NoLoop", "Salience", "Timer");
+
+    private List<CompletionItem> resolveRuleAnnotationNames() {
+        return RULE_ANNOTATIONS.stream()
+                .map(name -> createCompletionItem(name, CompletionItemKind.Class))
                 .toList();
     }
 

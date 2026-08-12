@@ -383,4 +383,27 @@ class DrlxCompletionHelperIncompleteCodeTest {
         List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("minAge", "result");
     }
+
+    @Test
+    void incompleteRule_annotationNames() {
+        String text = """
+                unit MyUnit;
+
+                @
+                rule R1 {
+                    var p : /persons,
+                    do { System.out.println(p); }
+                }
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(2);
+        caretPosition.setCharacter(1); // after '@'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains(
+                "ActivationGroup", "DataSource", "DateEffective", "DateExpires",
+                "Description", "Disabled", "Duration", "LockOnActive",
+                "NoLoop", "Salience", "Timer");
+    }
 }

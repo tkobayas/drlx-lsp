@@ -38,6 +38,12 @@ public class CompletionContextAnalyzer {
             return CompletionSite.ACCUMULATE_FUNCTION;
         }
 
+        if (identifierStack.contains(DrlxParser.RULE_annotation)
+                && !identifierStack.contains(DrlxParser.RULE_ruleBody)
+                && isAtAccess(parser, caretTokenIndex)) {
+            return CompletionSite.RULE_ANNOTATION;
+        }
+
         if (identifierStack.contains(DrlxParser.RULE_ruleConsequence)
                 && identifierStack.contains(DrlxParser.RULE_block)) {
             return CompletionSite.CONSEQUENCE_EXPRESSION;
@@ -148,5 +154,12 @@ public class CompletionContextAnalyzer {
             return false;
         }
         return parser.getTokenStream().get(caretTokenIndex - 1).getType() == DrlxLexer.HASH;
+    }
+
+    private static boolean isAtAccess(DrlxParser parser, int caretTokenIndex) {
+        if (caretTokenIndex < 1) {
+            return false;
+        }
+        return parser.getTokenStream().get(caretTokenIndex - 1).getType() == DrlxLexer.AT;
     }
 }
