@@ -170,6 +170,30 @@ class DrlxCompletionHelperIncompleteCodeTest {
     }
 
     @Test
+    void incompleteRule_varTypeInference_rhs() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do {
+                        var addr = p.getAddress();
+                        addr.
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(10);
+        caretPosition.setCharacter(13); // After 'addr.'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("city", "country", "getCity");
+    }
+
+    @Test
     void incompleteRule_accumulateResultBinding_var() {
         String text = """
                 import org.drools.drlx.domain.MyUnit;
@@ -224,6 +248,52 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
         List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
         assertThat(completionItemStrings(result)).contains("intValue", "doubleValue");
+    }
+
+    @Test
+    void incompleteRule_accKeyword_sourceBinding_dotAccess() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    acc(var p : /persons,
+                        int s = 0;,
+                        s = s + p.
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(8);
+        caretPosition.setCharacter(18); // after 's = s + p.'
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("age", "name", "address");
+    }
+
+    @Test
+    void accKeyword_initVar_dotAccess() {
+        String text = """
+                import org.drools.drlx.domain.Address;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    acc(var p : /persons,
+                        Address a = null;,
+                        a.city,
+                        int sum = 0)
+                }
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(8);
+        caretPosition.setCharacter(10); // after 'a.' in the action block
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("city", "country");
     }
 
     @Test

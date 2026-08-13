@@ -13,6 +13,7 @@ import com.github.javaparser.resolution.model.typesystem.ReferenceTypeImpl;
 import com.github.javaparser.resolution.types.ResolvedArrayType;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.drlx.parser.DrlxParser;
+import org.drools.drlx.parser.DrlxParser.AccInitVarContext;
 import org.drools.drlx.parser.DrlxParser.AccumulateItemContext;
 import org.drools.drlx.parser.DrlxParser.BlockContext;
 import org.drools.drlx.parser.DrlxParser.BlockStatementContext;
@@ -42,6 +43,7 @@ public class CompletionContext {
     private final DrlxParser parser;
     private final ParseTree tree;
     private final int caretTokenIndex;
+    private final SentinelExpressionTypeResolver typeResolver = new SentinelExpressionTypeResolver();
 
     private String unitClassName;
     private boolean unitClassNameResolved;
@@ -142,6 +144,7 @@ public class CompletionContext {
         extractRuleParameters(enclosingRule, builder);
         extractOopathBindings(enclosingRule, builder);
         extractConstraintBindings(enclosingRule, builder);
+        extractAccInitVars(enclosingRule, builder);
         extractLocalVariables(enclosingRule, builder);
         extractOopathConstraintProperties(enclosingRule, builder);
         return builder.build();
@@ -764,6 +767,27 @@ public class CompletionContext {
         }
     }
 
+    private void extractAccInitVars(RuleDeclarationContext rule, VisibleSymbols.Builder builder) {
+        if (rule.ruleBody() == null) return;
+        for (var ruleItem : rule.ruleBody().ruleItem()) {
+            if (ruleItem.getStart() != null && ruleItem.getStart().getTokenIndex() >= caretTokenIndex) continue;
+            collectAccInitVarsFromTree(ruleItem, builder);
+        }
+    }
+
+    private void collectAccInitVarsFromTree(ParseTree node, VisibleSymbols.Builder builder) {
+        if (node instanceof AccInitVarContext initVar) {
+            if (initVar.getStart().getTokenIndex() >= caretTokenIndex) return;
+            if (initVar.localVariableDeclaration() != null) {
+                extractFromLocalVarDecl(initVar.localVariableDeclaration(), builder);
+            }
+            return;
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            collectAccInitVarsFromTree(node.getChild(i), builder);
+        }
+    }
+
     private void extractLocalVariables(RuleDeclarationContext rule, VisibleSymbols.Builder builder) {
         if (rule.ruleBody() == null) return;
         for (var ruleItem : rule.ruleBody().ruleItem()) {
@@ -803,9 +827,18 @@ public class CompletionContext {
             }
         } else if (localVar.VAR() != null && localVar.identifier() != null) {
             String varName = localVar.identifier().getText();
-            SemanticType st = resolveTypeToSemanticType("Object");
+            SemanticType st = inferVarInitializerType(localVar, builder);
+            if (st == null) st = resolveTypeToSemanticType("Object");
             if (st != null) builder.add(varName, st);
         }
+    }
+
+    private SemanticType inferVarInitializerType(LocalVariableDeclarationContext localVar, VisibleSymbols.Builder builder) {
+        if (localVar.expression() == null) return null;
+        String exprText = parser.getTokenStream().getText(localVar.expression().getSourceInterval());
+        VisibleSymbols current = builder.build();
+        return typeResolver.resolveExpressionType(exprText, current, imports(), model.projectClassLoader())
+                .orElse(null);
     }
 
     SemanticType resolveTypeToSemanticType(String typeName) {

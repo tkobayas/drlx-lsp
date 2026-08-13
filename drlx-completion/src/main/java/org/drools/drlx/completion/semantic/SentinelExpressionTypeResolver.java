@@ -57,17 +57,37 @@ public class SentinelExpressionTypeResolver implements ExpressionTypeResolver {
         String repairedText = sb.toString();
         logger.info("Repaired expression: [{}]", repairedText);
 
+        ClassLoader cl = workspaceTypes instanceof WorkspaceSemanticModel wsm
+                ? wsm.projectClassLoader() : ClassLoader.getSystemClassLoader();
+        Set<String> imports = extractImports(expression.parseTree());
+        return resolveRepaired(repairedText, symbols, imports, cl);
+    }
+
+    /**
+     * Resolves the static type of a complete expression (e.g. a {@code var}
+     * initializer). Appends the sentinel as a member access and reuses the same
+     * MVEL transpile machinery as caret-based dot-access resolution.
+     */
+    public Optional<SemanticType> resolveExpressionType(
+            String expressionText, VisibleSymbols symbols, Set<String> imports, ClassLoader cl) {
+        if (expressionText == null || expressionText.isBlank()) {
+            return Optional.empty();
+        }
+        return resolveRepaired(expressionText + "." + SENTINEL, symbols, imports, cl);
+    }
+
+    private Optional<SemanticType> resolveRepaired(
+            String repairedText, VisibleSymbols symbols, Set<String> imports, ClassLoader cl) {
         try {
-            ClassLoader cl = workspaceTypes instanceof WorkspaceSemanticModel wsm
-                    ? wsm.projectClassLoader() : ClassLoader.getSystemClassLoader();
-            Set<String> imports = extractImports(expression.parseTree());
+            Set<String> allImports = new LinkedHashSet<>(DEFAULT_IMPORTS);
+            allImports.addAll(imports);
             Declaration<?>[] declarations = toDeclarations(symbols, cl);
             var builder = MVEL.map(declarations).<Object>out(Type.OBJECT)
                     .expression(repairedText)
                     .classManager(new ClassManager())
                     .classLoader(cl);
-            if (!imports.isEmpty()) {
-                builder.imports(imports);
+            if (!allImports.isEmpty()) {
+                builder.imports(allImports);
             }
             var params = builder.build();
 
