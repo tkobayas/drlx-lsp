@@ -93,7 +93,7 @@ public class DrlxCompletionHelper {
     private List<CompletionItem> createSemanticCompletions(CompletionSite site, CompletionContext ctx) {
         return switch (site) {
             case DOT_ACCESS -> resolveDotAccess(ctx);
-            case INLINE_CAST_TYPE -> resolveInlineCastTypeNames(ctx);
+            case INLINE_CAST_TYPE, AFTER_NEW -> resolveImportedClassNames(ctx);
             case ACCUMULATE_FUNCTION -> resolveAccumulateFunctionNames();
             case RULE_ANNOTATION -> resolveRuleAnnotationNames();
             case ENTRY_POINT -> resolveEntryPointNames(ctx);
@@ -121,7 +121,7 @@ public class DrlxCompletionHelper {
         return List.of(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
     }
 
-    private List<CompletionItem> resolveInlineCastTypeNames(CompletionContext ctx) {
+    private List<CompletionItem> resolveImportedClassNames(CompletionContext ctx) {
         List<String> names = ctx.resolveImportedTypeNames();
         if (names.isEmpty()) {
             return List.of();

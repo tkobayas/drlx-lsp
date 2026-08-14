@@ -16,6 +16,7 @@ public enum CompletionSite {
     RULE_ANNOTATION,
     TEST_EXPRESSION,
     RULE_PARAMETER,
+    AFTER_NEW,
     UNKNOWN;
 
     public boolean needsSemanticCompletions() {

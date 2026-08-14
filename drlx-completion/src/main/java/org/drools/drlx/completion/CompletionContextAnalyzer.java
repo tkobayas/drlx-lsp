@@ -3,6 +3,7 @@ package org.drools.drlx.completion;
 import java.util.List;
 
 import com.vmware.antlr4c3.CodeCompletionCore;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.drlx.parser.DrlxLexer;
 import org.drools.drlx.parser.DrlxParser;
@@ -27,6 +28,10 @@ public class CompletionContextAnalyzer {
 
         if (isHashAccess(parser, caretTokenIndex)) {
             return CompletionSite.INLINE_CAST_TYPE;
+        }
+
+        if (isAfterNew(parser, caretTokenIndex)) {
+            return CompletionSite.AFTER_NEW;
         }
 
         List<Integer> identifierStack = candidates.rules.get(DrlxParser.RULE_identifier);
@@ -154,6 +159,16 @@ public class CompletionContextAnalyzer {
             return false;
         }
         return parser.getTokenStream().get(caretTokenIndex - 1).getType() == DrlxLexer.HASH;
+    }
+
+    private static boolean isAfterNew(DrlxParser parser, int caretTokenIndex) {
+        for (int i = caretTokenIndex - 1; i >= 0; i--) {
+            Token token = parser.getTokenStream().get(i);
+            if (token.getChannel() == Token.DEFAULT_CHANNEL) {
+                return token.getType() == DrlxLexer.NEW;
+            }
+        }
+        return false;
     }
 
     private static boolean isAtAccess(DrlxParser parser, int caretTokenIndex) {

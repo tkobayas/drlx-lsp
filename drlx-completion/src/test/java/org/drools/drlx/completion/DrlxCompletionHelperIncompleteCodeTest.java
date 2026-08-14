@@ -385,6 +385,28 @@ class DrlxCompletionHelperIncompleteCodeTest {
     }
 
     @Test
+    void incompleteRule_afterNew() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { Person p2 = new\s
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(8);
+        caretPosition.setCharacter(25); // after 'new '
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("Person", "Address", "MyUnit");
+    }
+
+    @Test
     void incompleteRule_accumulateFunctionName() {
         String text = """
                 import org.drools.drlx.domain.MyUnit;
