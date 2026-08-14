@@ -440,6 +440,40 @@ public class CompletionContext {
         return findOopathChunkCompletionsInTree(enclosingRule.ruleBody());
     }
 
+    public List<String> resolveWatchListCompletions() {
+        DrlxCompilationUnitContext cu = findDrlxCompilationUnit();
+        if (cu == null) return List.of();
+
+        RuleDeclarationContext enclosingRule = findEnclosingRule(cu);
+        if (enclosingRule == null || enclosingRule.ruleBody() == null) return List.of();
+
+        return findWatchListCompletionsInTree(enclosingRule.ruleBody());
+    }
+
+    private List<String> findWatchListCompletionsInTree(ParseTree node) {
+        if (node instanceof OopathExpressionContext oopathExpr) {
+            List<String> result = resolveWatchListProperties(oopathExpr);
+            if (result != null) return result;
+            return List.of();
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            List<String> result = findWatchListCompletionsInTree(node.getChild(i));
+            if (!result.isEmpty()) return result;
+        }
+        return List.of();
+    }
+
+    private List<String> resolveWatchListProperties(OopathExpressionContext oopathExpr) {
+        OopathRootContext root = oopathExpr.oopathRoot();
+        if (root == null || root.identifier(0) == null) return null;
+
+        String rootName = root.identifier(0).getText();
+        SemanticType rootType = resolveEntryPointType(rootName);
+        if (rootType == null) return null;
+
+        return collectAllProperties(rootType);
+    }
+
     public List<String> resolveConstraintCompletions() {
         DrlxCompilationUnitContext cu = findDrlxCompilationUnit();
         if (cu == null) return List.of();

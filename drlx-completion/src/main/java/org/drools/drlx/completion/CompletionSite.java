@@ -17,6 +17,7 @@ public enum CompletionSite {
     TEST_EXPRESSION,
     RULE_PARAMETER,
     AFTER_NEW,
+    OOPATH_WATCH_LIST,
     UNKNOWN;
 
     public boolean needsSemanticCompletions() {

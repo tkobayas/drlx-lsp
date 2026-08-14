@@ -100,6 +100,7 @@ public class DrlxCompletionHelper {
             case OOPATH_CHUNK -> resolveOopathChunkCompletions(ctx);
             case CONSTRAINT_EXPRESSION -> resolveConstraintExpressionCompletions(ctx);
             case QUERY_PARAMETER -> resolveQueryParameterCompletions(ctx);
+            case OOPATH_WATCH_LIST -> resolveWatchListCompletions(ctx);
             default -> List.of(createCompletionItem("IDENTIFIER", CompletionItemKind.Text));
         };
     }
@@ -191,6 +192,15 @@ public class DrlxCompletionHelper {
         return names.stream()
                 .map(name -> createCompletionItem(name, CompletionItemKind.Property))
                 .toList();
+    }
+
+    private List<CompletionItem> resolveWatchListCompletions(CompletionContext ctx) {
+        List<String> names = ctx.resolveWatchListCompletions();
+        List<CompletionItem> items = new ArrayList<>(names.stream()
+                .map(name -> createCompletionItem(name, CompletionItemKind.Property))
+                .toList());
+        items.add(createCompletionItem("*", CompletionItemKind.Keyword));
+        return items;
     }
 
     private List<CompletionItem> deduplicateItems(List<CompletionItem> items) {

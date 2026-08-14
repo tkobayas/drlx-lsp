@@ -498,4 +498,40 @@ class DrlxCompletionHelperIncompleteCodeTest {
                 "Description", "Disabled", "Duration", "LockOnActive",
                 "NoLoop", "Salience", "Timer");
     }
+
+    @Test
+    void incompleteRule_watchList_emptyConstraint() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons[][
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(23);
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("name", "age", "address", "previousAddresses");
+    }
+
+    @Test
+    void incompleteRule_watchList_withConstraint() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons[age > 18][
+                """;
+
+        Position caretPosition = new Position();
+        caretPosition.setLine(4);
+        caretPosition.setCharacter(31);
+
+        List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
+        assertThat(completionItemStrings(result)).contains("name", "age", "address", "previousAddresses");
+    }
 }
