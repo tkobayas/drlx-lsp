@@ -514,7 +514,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
         caretPosition.setCharacter(23);
 
         List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
-        assertThat(completionItemStrings(result)).contains("name", "age", "address", "previousAddresses");
+        assertThat(completionItemStrings(result)).contains("name", "age", "address", "previousAddresses", "*");
     }
 
     @Test
@@ -532,6 +532,6 @@ class DrlxCompletionHelperIncompleteCodeTest {
         caretPosition.setCharacter(31);
 
         List<CompletionItem> result = helper.getCompletionItems(text, caretPosition);
-        assertThat(completionItemStrings(result)).contains("name", "age", "address", "previousAddresses");
+        assertThat(completionItemStrings(result)).contains("name", "age", "address", "previousAddresses", "*");
     }
 }
