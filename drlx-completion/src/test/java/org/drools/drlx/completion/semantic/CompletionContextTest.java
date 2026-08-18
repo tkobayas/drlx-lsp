@@ -17,15 +17,13 @@ class CompletionContextTest {
             import org.example.Address;
             unit PersonUnit;
             rule FindAdults {
-                Person p : /persons[age >= 18]
-                Address a : /addresses
-                ---
-                System.out.println(p);
+                Person p : /persons[age >= 18],
+                Address a : /addresses,
+                do { System.out.println(p); }
             }
             rule FindChildren(String name) {
-                Person p : /persons[age < 18]
-                ---
-                System.out.println(p);
+                Person p : /persons[age < 18],
+                do { System.out.println(p); }
             }
             """;
 

@@ -23,4 +23,8 @@ public enum CompletionSite {
     public boolean needsSemanticCompletions() {
         return this != UNKNOWN;
     }
+
+    public boolean semanticOnly() {
+        return this == ENTRY_POINT || this == OOPATH_CHUNK || this == OOPATH_WATCH_LIST;
+    }
 }

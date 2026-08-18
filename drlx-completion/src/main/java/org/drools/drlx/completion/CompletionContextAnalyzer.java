@@ -69,7 +69,8 @@ public class CompletionContextAnalyzer {
             return CompletionSite.OOPATH_WATCH_LIST;
         }
 
-        if (identifierStack.contains(DrlxParser.RULE_oopathRoot)) {
+        if (identifierStack.contains(DrlxParser.RULE_oopathRoot)
+                || identifierStack.contains(DrlxParser.RULE_fromExpression)) {
             return CompletionSite.ENTRY_POINT;
         }
 

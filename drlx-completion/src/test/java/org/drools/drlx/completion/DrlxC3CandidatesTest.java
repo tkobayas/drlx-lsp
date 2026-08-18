@@ -161,8 +161,11 @@ class DrlxC3CandidatesTest {
     @Test
     void afterSlash() {
         // At 'persons' after '/' in '/persons[...]'
+        // c3 explores both oopathExpression and fromExpression paths;
+        // the fromExpression path produces Java keyword tokens via expression.
+        // The completion helper suppresses these (semanticOnly) — only
+        // entry-point names are offered to the user.
         CandidateResult r = collectAt(TEXT, 3, 17);
-        assertThat(tokenNames(r)).isEmpty();
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("oopathRoot");
@@ -183,8 +186,9 @@ class DrlxC3CandidatesTest {
     @Test
     void oopathChunkIdentifier() {
         // At 'address' in '/persons/address[...]'
+        // Same as afterSlash: fromExpression path leaks expression tokens.
+        // The completion helper suppresses these (semanticOnly).
         CandidateResult r = collectAt(TEXT, 4, 21);
-        assertThat(tokenNames(r)).isEmpty();
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("oopathChunk");

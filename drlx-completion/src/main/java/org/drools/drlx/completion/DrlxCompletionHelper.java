@@ -66,18 +66,22 @@ public class DrlxCompletionHelper {
 
         logger.info("getCompletionItems: candidates = {}", candidates);
 
+        CompletionSite site = CompletionContextAnalyzer.analyze(candidates, parser, caretTokenIndex, parseTree);
+
         List<CompletionItem> items = new ArrayList<>();
 
-        // 1. Always: keyword completions from candidates.tokens
-        candidates.tokens.keySet().stream()
-                .filter(Objects::nonNull)
-                .map(integer -> parser.getVocabulary().getDisplayName(integer).replace("'", ""))
-                .map(String::toLowerCase)
-                .map(k -> createCompletionItem(k, CompletionItemKind.Keyword))
-                .forEach(items::add);
+        // 1. Keyword completions from candidates.tokens (suppressed for
+        //    sites where only semantic completions are meaningful)
+        if (!site.semanticOnly()) {
+            candidates.tokens.keySet().stream()
+                    .filter(Objects::nonNull)
+                    .map(integer -> parser.getVocabulary().getDisplayName(integer).replace("'", ""))
+                    .map(String::toLowerCase)
+                    .map(k -> createCompletionItem(k, CompletionItemKind.Keyword))
+                    .forEach(items::add);
+        }
 
-        // 2. Additionally: semantic completions when identifier rule applies
-        CompletionSite site = CompletionContextAnalyzer.analyze(candidates, parser, caretTokenIndex, parseTree);
+        // 2. Semantic completions when identifier rule applies
         if (site.needsSemanticCompletions()) {
             CompletionContext ctx = model.createContext(parser, parseTree, caretTokenIndex);
             items.addAll(createSemanticCompletions(site, ctx));
