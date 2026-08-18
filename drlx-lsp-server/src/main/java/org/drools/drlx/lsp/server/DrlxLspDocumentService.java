@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import org.drools.drlx.completion.DrlxCompletionHelper;
+import org.drools.drlx.completion.DrlxDiagnosticHelper;
 import org.drools.drlx.completion.semantic.MemberCompletionProvider;
 import org.drools.drlx.completion.semantic.SentinelExpressionTypeResolver;
 import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
@@ -57,14 +58,17 @@ public class DrlxLspDocumentService implements TextDocumentService {
         sourcesMap.put(uri, text);
         CompletableFuture.runAsync(() ->
                                            server.getClient().publishDiagnostics(
-                                                   new PublishDiagnosticsParams(uri, validate())
+                                                   new PublishDiagnosticsParams(uri, validate(uri))
                                            )
         );
     }
 
-    private List<Diagnostic> validate() {
-        // TODO: Implement Drlx validation
-        return Collections.emptyList();
+    private List<Diagnostic> validate(String uri) {
+        String text = sourcesMap.get(uri);
+        if (text == null) {
+            return Collections.emptyList();
+        }
+        return DrlxDiagnosticHelper.validate(text);
     }
 
     @Override
@@ -77,7 +81,7 @@ public class DrlxLspDocumentService implements TextDocumentService {
         sourcesMap.put(uri, newText);
         CompletableFuture.runAsync(() ->
                                            server.getClient().publishDiagnostics(
-                                                   new PublishDiagnosticsParams(uri, validate())
+                                                   new PublishDiagnosticsParams(uri, validate(uri))
                                            )
         );
     }
