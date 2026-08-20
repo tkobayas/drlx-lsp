@@ -188,6 +188,28 @@ class DrlxHoverHelperTest {
     }
 
     @Test
+    void hoverOnImportTypeName() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { }
+                }
+                """;
+        // "Person" in import — line 0, char 30
+        Hover hover = DrlxHoverHelper.hover(text, new Position(0, 30), model);
+
+        String md = content(hover);
+        assertThat(md).contains("org.drools.drlx.domain.Person");
+        assertThat(md).contains("name");
+        assertThat(md).contains("age");
+    }
+
+    @Test
     void nullTextReturnsNull() {
         assertThat(DrlxHoverHelper.hover(null, new Position(0, 0), model)).isNull();
     }

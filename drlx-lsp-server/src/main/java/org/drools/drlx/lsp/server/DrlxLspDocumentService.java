@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 
 import org.drools.drlx.completion.DrlxCompletionHelper;
 import org.drools.drlx.completion.DrlxDiagnosticHelper;
+import org.drools.drlx.completion.DrlxHoverHelper;
 import org.drools.drlx.completion.semantic.MemberCompletionProvider;
 import org.drools.drlx.completion.semantic.SentinelExpressionTypeResolver;
 import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
@@ -19,6 +20,8 @@ import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
+import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
@@ -38,10 +41,12 @@ public class DrlxLspDocumentService implements TextDocumentService {
     private final Map<String, String> sourcesMap = new ConcurrentHashMap<>();
 
     private final DrlxLspServer server;
+    private final WorkspaceSemanticModel model;
     private final DrlxCompletionHelper completionHelper;
 
     public DrlxLspDocumentService(DrlxLspServer server, WorkspaceSemanticModel model) {
         this.server = server;
+        this.model = model;
         this.completionHelper = new DrlxCompletionHelper(
                 model,
                 new SentinelExpressionTypeResolver(),
@@ -84,6 +89,16 @@ public class DrlxLspDocumentService implements TextDocumentService {
                                                    new PublishDiagnosticsParams(uri, validate(uri))
                                            )
         );
+    }
+
+    @Override
+    public CompletableFuture<Hover> hover(HoverParams params) {
+        return CompletableFuture.supplyAsync(() -> {
+            String uri = params.getTextDocument().getUri();
+            String text = sourcesMap.get(uri);
+            if (text == null) return null;
+            return DrlxHoverHelper.hover(text, params.getPosition(), model);
+        });
     }
 
     @Override

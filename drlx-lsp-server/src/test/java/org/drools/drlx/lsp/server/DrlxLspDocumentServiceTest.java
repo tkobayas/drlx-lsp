@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionParams;
+import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.Test;
@@ -145,5 +147,33 @@ class DrlxLspDocumentServiceTest {
         completionParams.setPosition(new Position(2, 17));
         List<CompletionItem> result = drlxLspDocumentService.getCompletionItems(completionParams);
         assertThat(completionItemStrings(result)).doesNotContain("IDENTIFIER");
+    }
+
+    @Test
+    void hover_oopathBinding() throws Exception {
+        String drlx = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { p }
+                }
+                """;
+
+        DrlxLspDocumentService service = getDrlxLspDocumentService(drlx);
+
+        HoverParams params = new HoverParams();
+        params.setTextDocument(new TextDocumentIdentifier("myDocument"));
+        params.setPosition(new Position(7, 9));
+
+        Hover hover = service.hover(params).get();
+
+        assertThat(hover).isNotNull();
+        String md = hover.getContents().getRight().getValue();
+        assertThat(md).contains("Person");
+        assertThat(md).contains("name");
     }
 }

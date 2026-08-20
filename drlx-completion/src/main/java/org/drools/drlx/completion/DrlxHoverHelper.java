@@ -53,7 +53,8 @@ public final class DrlxHoverHelper {
 
         Token preceding = findPrecedingDefaultToken(tokens, tokenIndex);
         if (preceding != null && isDotToken(preceding.getType())) {
-            return resolveDotHover(word, preceding, tokens, ctx, model);
+            Hover dotHover = resolveDotHover(word, preceding, tokens, ctx, model);
+            if (dotHover != null) return dotHover;
         }
 
         VisibleSymbols symbols = ctx.buildVisibleSymbols();
