@@ -1,0 +1,106 @@
+package org.drools.drlx.completion;
+
+import org.drools.drlx.completion.semantic.CurrentClassloaderProvider;
+import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
+import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.Position;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+class DrlxHoverHelperTest {
+
+    private final WorkspaceSemanticModel model =
+            new WorkspaceSemanticModel(new CurrentClassloaderProvider());
+
+    private static String content(Hover hover) {
+        assertThat(hover).isNotNull();
+        return hover.getContents().getRight().getValue();
+    }
+
+    @Test
+    void hoverOnOopathBinding() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { p }
+                }
+                """;
+        // "p" in "do { p }" — line 7 after stripping, char 9
+        Hover hover = DrlxHoverHelper.hover(text, new Position(7, 9), model);
+
+        String md = content(hover);
+        assertThat(md).contains("Person");
+        assertThat(md).contains("name");
+        assertThat(md).contains("age");
+        assertThat(md).contains("address");
+    }
+
+    @Test
+    void hoverOnRuleParameter() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1(Person p) {
+                    do { System.out.println(p); }
+                }
+                """;
+        // "p" in "println(p)" — line 6, char 28
+        Hover hover = DrlxHoverHelper.hover(text, new Position(6, 28), model);
+
+        String md = content(hover);
+        assertThat(md).contains("Person");
+        assertThat(md).contains("name");
+    }
+
+    @Test
+    void hoverOnUnknownSymbolReturnsNull() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { unknown }
+                }
+                """;
+        // "unknown" — line 7, char 9
+        Hover hover = DrlxHoverHelper.hover(text, new Position(7, 9), model);
+        assertThat(hover).isNull();
+    }
+
+    @Test
+    void hoverOnKeywordReturnsNull() {
+        String text = """
+                import org.drools.drlx.domain.MyUnit;
+                unit MyUnit;
+                rule R1 {
+                    var p : /persons,
+                    do { }
+                }
+                """;
+        // "rule" keyword — line 2, char 0
+        Hover hover = DrlxHoverHelper.hover(text, new Position(2, 0), model);
+        assertThat(hover).isNull();
+    }
+
+    @Test
+    void nullTextReturnsNull() {
+        assertThat(DrlxHoverHelper.hover(null, new Position(0, 0), model)).isNull();
+    }
+
+    @Test
+    void nullPositionReturnsNull() {
+        assertThat(DrlxHoverHelper.hover("rule R1 {}", null, model)).isNull();
+    }
+}
