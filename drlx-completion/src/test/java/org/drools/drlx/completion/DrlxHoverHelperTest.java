@@ -95,6 +95,99 @@ class DrlxHoverHelperTest {
     }
 
     @Test
+    void hoverOnDotAccessMember() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { p.address }
+                }
+                """;
+        // "address" in "p.address" — line 8, char 11
+        Hover hover = DrlxHoverHelper.hover(text, new Position(8, 11), model);
+
+        String md = content(hover);
+        assertThat(md).contains("address");
+        assertThat(md).contains("Address");
+        assertThat(md).contains("Field of");
+        assertThat(md).contains("Person");
+    }
+
+    @Test
+    void hoverOnChainedDotAccess() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { p.address.city }
+                }
+                """;
+        // "city" in "p.address.city" — line 8, char 19
+        Hover hover = DrlxHoverHelper.hover(text, new Position(8, 19), model);
+
+        String md = content(hover);
+        assertThat(md).contains("city");
+        assertThat(md).contains("String");
+        assertThat(md).contains("Field of");
+        assertThat(md).contains("Address");
+    }
+
+    @Test
+    void hoverOnConstraintBinding() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons[addr : address],
+                    do { addr }
+                }
+                """;
+        // "addr" in "do { addr }" — line 8, char 9
+        Hover hover = DrlxHoverHelper.hover(text, new Position(8, 9), model);
+
+        String md = content(hover);
+        assertThat(md).contains("Address");
+    }
+
+    @Test
+    void hoverOnRhsLocal() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.Address;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do {
+                        Address x = p.getAddress();
+                        x
+                    }
+                }
+                """;
+        // "x" on its own line — line 10, char 8
+        Hover hover = DrlxHoverHelper.hover(text, new Position(10, 8), model);
+
+        String md = content(hover);
+        assertThat(md).contains("Address");
+    }
+
+    @Test
     void nullTextReturnsNull() {
         assertThat(DrlxHoverHelper.hover(null, new Position(0, 0), model)).isNull();
     }
