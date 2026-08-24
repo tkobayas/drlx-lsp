@@ -219,7 +219,7 @@ public final class DrlxHoverHelper {
         return dot >= 0 ? fqcn.substring(dot + 1) : fqcn;
     }
 
-    private static Token findTokenAt(CommonTokenStream tokens, Position position) {
+    static Token findTokenAt(CommonTokenStream tokens, Position position) {
         int line = position.getLine() + 1;
         int col = position.getCharacter();
         tokens.fill();
@@ -249,7 +249,7 @@ public final class DrlxHoverHelper {
         return type == DrlxLexer.DOT || type == DrlxLexer.EXCL_DOT;
     }
 
-    private static DrlxParser createParser(String text) {
+    static DrlxParser createParser(String text) {
         ANTLRInputStream input = new ANTLRInputStream(text);
         DrlxLexer lexer = new DrlxLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
