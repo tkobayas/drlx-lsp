@@ -4,10 +4,14 @@ import java.util.List;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionParams;
+import org.eclipse.lsp4j.DefinitionParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -175,5 +179,31 @@ class DrlxLspDocumentServiceTest {
         String md = hover.getContents().getRight().getValue();
         assertThat(md).contains("Person");
         assertThat(md).contains("name");
+    }
+
+    @Test
+    void definition_oopathBinding() throws Exception {
+        String drlx = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { p }
+                }
+                """;
+
+        DrlxLspDocumentService service = getDrlxLspDocumentService(drlx);
+
+        DefinitionParams params = new DefinitionParams();
+        params.setTextDocument(new TextDocumentIdentifier("myDocument"));
+        params.setPosition(new Position(7, 9)); // "p" in "do { p }"
+
+        Either<List<? extends Location>, List<? extends LocationLink>> result = service.definition(params).get();
+
+        assertThat(result.getLeft()).hasSize(1);
+        assertThat(result.getLeft().get(0).getRange().getStart().getLine()).isEqualTo(6);
     }
 }

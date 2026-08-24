@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import org.drools.drlx.completion.DrlxCompletionHelper;
+import org.drools.drlx.completion.DrlxDefinitionHelper;
 import org.drools.drlx.completion.DrlxDiagnosticHelper;
 import org.drools.drlx.completion.DrlxHoverHelper;
 import org.drools.drlx.completion.semantic.MemberCompletionProvider;
@@ -18,10 +19,13 @@ import org.slf4j.LoggerFactory;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
+import org.eclipse.lsp4j.DefinitionParams;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
@@ -98,6 +102,17 @@ public class DrlxLspDocumentService implements TextDocumentService {
             String text = sourcesMap.get(uri);
             if (text == null) return null;
             return DrlxHoverHelper.hover(text, params.getPosition(), model);
+        });
+    }
+
+    @Override
+    public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(DefinitionParams params) {
+        return CompletableFuture.supplyAsync(() -> {
+            String uri = params.getTextDocument().getUri();
+            String text = sourcesMap.get(uri);
+            if (text == null) return Either.forLeft(Collections.emptyList());
+            List<Location> locations = DrlxDefinitionHelper.definition(uri, text, params.getPosition(), model);
+            return Either.forLeft(locations);
         });
     }
 

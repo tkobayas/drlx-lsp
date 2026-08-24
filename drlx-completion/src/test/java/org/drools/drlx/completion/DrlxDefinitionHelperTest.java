@@ -171,6 +171,53 @@ class DrlxDefinitionHelperTest {
     }
 
     @Test
+    void importType() {
+        // Line 0: import org.drools.drlx.domain.Person;
+        // Line 1: import org.drools.drlx.domain.MyUnit;
+        // Line 2:
+        // Line 3: unit MyUnit;
+        // Line 4:
+        // Line 5: rule R1(Person p) {
+        // Line 6:     do { p }
+        // Line 7: }
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1(Person p) {
+                    do { p }
+                }
+                """;
+        // Cursor on "Person" in "rule R1(Person p)" — line 5, char 8
+        List<Location> defs = DrlxDefinitionHelper.definition(URI, text, new Position(5, 8), model);
+
+        assertThat(defs).hasSize(1);
+        // "Person" in import line — line 0
+        assertThat(defs.get(0).getRange().getStart().getLine()).isEqualTo(0);
+    }
+
+    @Test
+    void cursorOnImportLine() {
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1(Person p) {
+                    do { p }
+                }
+                """;
+        // Cursor on "Person" in the import line — line 0
+        // "Person" starts at char 31 in "import org.drools.drlx.domain.Person;"
+        List<Location> defs = DrlxDefinitionHelper.definition(URI, text, new Position(0, 31), model);
+
+        assertThat(defs).isEmpty();
+    }
+
+    @Test
     void nullTextReturnsEmpty() {
         List<Location> defs = DrlxDefinitionHelper.definition(URI, null, new Position(0, 0), model);
         assertThat(defs).isEmpty();

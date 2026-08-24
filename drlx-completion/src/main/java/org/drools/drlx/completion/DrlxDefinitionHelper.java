@@ -14,6 +14,8 @@ import org.drools.drlx.completion.semantic.VisibleSymbols;
 import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
 import org.drools.drlx.parser.DrlxLexer;
 import org.drools.drlx.parser.DrlxParser;
+import org.drools.drlx.parser.DrlxParser.DrlxCompilationUnitContext;
+import org.drools.drlx.parser.DrlxParser.ImportDeclarationContext;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 
@@ -51,6 +53,44 @@ public class DrlxDefinitionHelper {
             return List.of(new Location(uri, defRange.toLspRange()));
         }
 
+        List<Location> importDef = resolveImportDefinition(word, position, parseTree, uri);
+        if (!importDef.isEmpty()) {
+            return importDef;
+        }
+
         return Collections.emptyList();
+    }
+
+    private static List<Location> resolveImportDefinition(String word, Position position, ParseTree parseTree, String uri) {
+        DrlxCompilationUnitContext cu = findCompilationUnit(parseTree);
+        if (cu == null) return Collections.emptyList();
+
+        for (ImportDeclarationContext imp : cu.importDeclaration()) {
+            if (imp.qualifiedName() == null) continue;
+            String fqcn = imp.qualifiedName().getText();
+            String simpleName = fqcn.contains(".") ? fqcn.substring(fqcn.lastIndexOf('.') + 1) : fqcn;
+            if (!simpleName.equals(word)) continue;
+
+            int importLine = imp.getStart().getLine() - 1;
+            if (position.getLine() == importLine) {
+                return Collections.emptyList();
+            }
+
+            var identifiers = imp.qualifiedName().identifier();
+            var lastIdent = identifiers.get(identifiers.size() - 1);
+            Token nameToken = lastIdent.getStart();
+            TokenRange range = TokenRange.fromAntlrToken(nameToken, simpleName.length());
+            return List.of(new Location(uri, range.toLspRange()));
+        }
+        return Collections.emptyList();
+    }
+
+    private static DrlxCompilationUnitContext findCompilationUnit(ParseTree node) {
+        if (node instanceof DrlxCompilationUnitContext cu) return cu;
+        for (int i = 0; i < node.getChildCount(); i++) {
+            DrlxCompilationUnitContext found = findCompilationUnit(node.getChild(i));
+            if (found != null) return found;
+        }
+        return null;
     }
 }
