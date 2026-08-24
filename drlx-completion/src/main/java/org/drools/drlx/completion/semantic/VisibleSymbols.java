@@ -22,9 +22,9 @@ public class VisibleSymbols {
 
     private static final VisibleSymbols EMPTY = new VisibleSymbols(Collections.emptyMap());
 
-    private final Map<String, SemanticType> symbols;
+    private final Map<String, SymbolEntry> symbols;
 
-    private VisibleSymbols(Map<String, SemanticType> symbols) {
+    private VisibleSymbols(Map<String, SymbolEntry> symbols) {
         this.symbols = symbols;
     }
 
@@ -33,11 +33,18 @@ public class VisibleSymbols {
     }
 
     public Optional<SemanticType> lookup(String name) {
+        SymbolEntry entry = symbols.get(name);
+        return entry != null ? Optional.of(entry.type()) : Optional.empty();
+    }
+
+    public Optional<SymbolEntry> lookupEntry(String name) {
         return Optional.ofNullable(symbols.get(name));
     }
 
     public Iterable<Map.Entry<String, SemanticType>> entries() {
-        return symbols.entrySet();
+        Map<String, SemanticType> typeMap = new LinkedHashMap<>();
+        symbols.forEach((k, v) -> typeMap.put(k, v.type()));
+        return typeMap.entrySet();
     }
 
     public boolean isEmpty() {
@@ -45,10 +52,15 @@ public class VisibleSymbols {
     }
 
     public static class Builder {
-        private final Map<String, SemanticType> map = new LinkedHashMap<>();
+        private final Map<String, SymbolEntry> map = new LinkedHashMap<>();
 
         public Builder add(String name, SemanticType type) {
-            map.put(name, type);
+            map.put(name, new SymbolEntry(type, null));
+            return this;
+        }
+
+        public Builder add(String name, SemanticType type, TokenRange range) {
+            map.put(name, new SymbolEntry(type, range));
             return this;
         }
 
