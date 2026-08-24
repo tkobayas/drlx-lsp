@@ -175,7 +175,10 @@ public class CompletionContext {
             String typeName = param.typeType().getText();
             String varName = param.identifier().getText();
             SemanticType st = resolveTypeToSemanticType(typeName);
-            if (st != null) builder.add(varName, st);
+            if (st != null) {
+                TokenRange range = TokenRange.fromAntlrToken(param.identifier().getStart(), varName.length());
+                builder.add(varName, st, range);
+            }
         }
     }
 
@@ -193,12 +196,13 @@ public class CompletionContext {
             if (bound.identifier().size() >= 2) {
                 String typeName = bound.identifier(0).getText();
                 String bindName = bound.identifier(1).getText();
+                TokenRange range = TokenRange.fromAntlrToken(bound.identifier(1).getStart(), bindName.length());
                 if (!"var".equals(typeName)) {
                     SemanticType st = resolveTypeToSemanticType(typeName);
-                    if (st != null) builder.add(bindName, st);
+                    if (st != null) builder.add(bindName, st, range);
                 } else {
                     SemanticType inferred = inferVarBindingType(bound);
-                    if (inferred != null) builder.add(bindName, inferred);
+                    if (inferred != null) builder.add(bindName, inferred, range);
                 }
             }
             return;
@@ -206,12 +210,13 @@ public class CompletionContext {
         if (node instanceof AccumulateItemContext accItem) {
             if (accItem.getStart().getTokenIndex() >= caretTokenIndex) return;
             String bindName = accItem.identifier().getText();
+            TokenRange accRange = TokenRange.fromAntlrToken(accItem.identifier().getStart(), bindName.length());
             if (accItem.typeType() != null) {
                 SemanticType st = resolveTypeToSemanticType(accItem.typeType().getText());
-                if (st != null) builder.add(bindName, st);
+                if (st != null) builder.add(bindName, st, accRange);
             } else if (accItem.VAR() != null) {
                 SemanticType inferred = inferAccumulateResultType(accItem);
-                if (inferred != null) builder.add(bindName, inferred);
+                if (inferred != null) builder.add(bindName, inferred, accRange);
             }
             return;
         }
@@ -304,7 +309,8 @@ public class CompletionContext {
                 if (propName != null) {
                     SemanticType propType = resolvePropertyType(ownerType, propName);
                     if (propType != null) {
-                        builder.add(bindName, propType);
+                        TokenRange bindRange = TokenRange.fromAntlrToken(drlxExpr.bind.getStart(), bindName.length());
+                        builder.add(bindName, propType, bindRange);
                     }
                 }
             }
@@ -856,14 +862,20 @@ public class CompletionContext {
                 if (decl.variableDeclaratorId() != null) {
                     String varName = decl.variableDeclaratorId().identifier().getText();
                     SemanticType st = resolveTypeToSemanticType(typeName);
-                    if (st != null) builder.add(varName, st);
+                    if (st != null) {
+                        TokenRange range = TokenRange.fromAntlrToken(decl.variableDeclaratorId().identifier().getStart(), varName.length());
+                        builder.add(varName, st, range);
+                    }
                 }
             }
         } else if (localVar.VAR() != null && localVar.identifier() != null) {
             String varName = localVar.identifier().getText();
             SemanticType st = inferVarInitializerType(localVar, builder);
             if (st == null) st = resolveTypeToSemanticType("Object");
-            if (st != null) builder.add(varName, st);
+            if (st != null) {
+                TokenRange range = TokenRange.fromAntlrToken(localVar.identifier().getStart(), varName.length());
+                builder.add(varName, st, range);
+            }
         }
     }
 
