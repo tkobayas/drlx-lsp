@@ -11,6 +11,8 @@ import org.drools.drlx.completion.DrlxCompletionHelper;
 import org.drools.drlx.completion.DrlxDefinitionHelper;
 import org.drools.drlx.completion.DrlxDiagnosticHelper;
 import org.drools.drlx.completion.DrlxHoverHelper;
+import org.drools.drlx.completion.DrlxReferencesHelper;
+import org.eclipse.lsp4j.ReferenceParams;
 import org.drools.drlx.completion.semantic.MemberCompletionProvider;
 import org.drools.drlx.completion.semantic.SentinelExpressionTypeResolver;
 import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
@@ -113,6 +115,18 @@ public class DrlxLspDocumentService implements TextDocumentService {
             if (text == null) return Either.forLeft(Collections.emptyList());
             List<Location> locations = DrlxDefinitionHelper.definition(uri, text, params.getPosition(), model);
             return Either.forLeft(locations);
+        });
+    }
+
+    @Override
+    public CompletableFuture<List<? extends Location>> references(ReferenceParams params) {
+        return CompletableFuture.supplyAsync(() -> {
+            String uri = params.getTextDocument().getUri();
+            String text = sourcesMap.get(uri);
+            if (text == null) return Collections.emptyList();
+            boolean includeDeclaration =
+                    params.getContext() != null && params.getContext().isIncludeDeclaration();
+            return DrlxReferencesHelper.references(uri, text, params.getPosition(), model, includeDeclaration);
         });
     }
 

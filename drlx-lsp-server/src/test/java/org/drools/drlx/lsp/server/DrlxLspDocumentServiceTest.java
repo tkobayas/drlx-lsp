@@ -10,6 +10,8 @@ import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.ReferenceContext;
+import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.junit.jupiter.api.Test;
@@ -205,5 +207,33 @@ class DrlxLspDocumentServiceTest {
 
         assertThat(result.getLeft()).hasSize(1);
         assertThat(result.getLeft().get(0).getRange().getStart().getLine()).isEqualTo(6);
+    }
+
+    @Test
+    void references_findsBindingUses() throws Exception {
+        String drlx = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { p }
+                }
+                """;
+
+        DrlxLspDocumentService service = getDrlxLspDocumentService(drlx);
+
+        ReferenceParams params = new ReferenceParams();
+        params.setTextDocument(new TextDocumentIdentifier("myDocument"));
+        params.setPosition(new Position(7, 9)); // "p" in "do { p }"
+        params.setContext(new ReferenceContext(true));
+
+        List<? extends Location> refs = service.references(params).get();
+
+        assertThat(refs).hasSize(2);
+        assertThat(refs).anyMatch(loc -> loc.getRange().getStart().getLine() == 6);
+        assertThat(refs).anyMatch(loc -> loc.getRange().getStart().getLine() == 7);
     }
 }
