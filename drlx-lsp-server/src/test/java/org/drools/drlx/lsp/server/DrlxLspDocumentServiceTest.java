@@ -15,12 +15,16 @@ import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.SymbolInformation;
+import org.eclipse.lsp4j.FoldingRange;
+import org.eclipse.lsp4j.FoldingRangeKind;
+import org.eclipse.lsp4j.FoldingRangeRequestParams;
 import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.drools.drlx.completion.DrlxCompletionHelper.completionItemStrings;
 import static org.drools.drlx.lsp.server.TestHelperMethods.getDrlxLspDocumentService;
 
@@ -276,5 +280,36 @@ class DrlxLspDocumentServiceTest {
         assertThat(result.get(2).isRight()).isTrue();
         assertThat(result.get(2).getRight().getName()).isEqualTo("R2");
         assertThat(result.get(2).getRight().getKind()).isEqualTo(SymbolKind.Method);
+    }
+
+    @Test
+    void foldingRange_returnsRangesForDrlxFile() throws Exception {
+        String content =
+                "/*\n"                              // 0
+                + " * multi line comment\n"         // 1
+                + " */\n"                           // 2
+                + "import org.example.Person;\n"    // 3
+                + "import org.example.Order;\n"     // 4
+                + "unit MyUnit;\n"                  // 5
+                + "rule R1 {\n"                     // 6
+                + "    var p : /persons,\n"         // 7
+                + "    do {\n"                      // 8
+                + "        System.out.println(p);\n"// 9
+                + "    }\n"                         // 10
+                + "}\n";                            // 11
+
+        DrlxLspDocumentService service = getDrlxLspDocumentService(content);
+
+        FoldingRangeRequestParams params = new FoldingRangeRequestParams(
+                new TextDocumentIdentifier("myDocument"));
+
+        List<FoldingRange> ranges = service.foldingRange(params).get();
+
+        assertThat(ranges)
+                .extracting(FoldingRange::getStartLine, FoldingRange::getEndLine, FoldingRange::getKind)
+                .contains(
+                        tuple(0, 2, FoldingRangeKind.Comment),
+                        tuple(3, 4, FoldingRangeKind.Imports),
+                        tuple(6, 11, FoldingRangeKind.Region));
     }
 }
