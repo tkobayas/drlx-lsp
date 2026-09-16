@@ -11,7 +11,11 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.ReferenceContext;
+import org.eclipse.lsp4j.DocumentSymbol;
+import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.ReferenceParams;
+import org.eclipse.lsp4j.SymbolInformation;
+import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.junit.jupiter.api.Test;
@@ -235,5 +239,42 @@ class DrlxLspDocumentServiceTest {
         assertThat(refs).hasSize(2);
         assertThat(refs).anyMatch(loc -> loc.getRange().getStart().getLine() == 6);
         assertThat(refs).anyMatch(loc -> loc.getRange().getStart().getLine() == 7);
+    }
+
+    @Test
+    void documentSymbol_returnsSymbolsForDrlxFile() throws Exception {
+        String drlx = """
+                import org.drools.drlx.domain.Person;
+
+                unit MyUnit;
+
+                rule R1 {
+                    var p : /persons,
+                    do { System.out.println(p); }
+                }
+
+                rule R2 {
+                    var p : /persons,
+                    do { }
+                }
+                """;
+
+        DrlxLspDocumentService service = getDrlxLspDocumentService(drlx);
+
+        DocumentSymbolParams params = new DocumentSymbolParams(new TextDocumentIdentifier("myDocument"));
+        List<Either<SymbolInformation, DocumentSymbol>> result = service.documentSymbol(params).get();
+
+        assertThat(result).hasSize(3);
+        assertThat(result.get(0).isRight()).isTrue();
+        assertThat(result.get(0).getRight().getName()).isEqualTo("MyUnit");
+        assertThat(result.get(0).getRight().getKind()).isEqualTo(SymbolKind.Namespace);
+
+        assertThat(result.get(1).isRight()).isTrue();
+        assertThat(result.get(1).getRight().getName()).isEqualTo("R1");
+        assertThat(result.get(1).getRight().getKind()).isEqualTo(SymbolKind.Method);
+
+        assertThat(result.get(2).isRight()).isTrue();
+        assertThat(result.get(2).getRight().getName()).isEqualTo("R2");
+        assertThat(result.get(2).getRight().getKind()).isEqualTo(SymbolKind.Method);
     }
 }
