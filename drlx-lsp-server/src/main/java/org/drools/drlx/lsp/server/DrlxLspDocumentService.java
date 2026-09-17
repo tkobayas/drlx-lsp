@@ -15,6 +15,7 @@ import org.drools.drlx.completion.DrlxDiagnosticHelper;
 import org.drools.drlx.completion.DrlxDocumentSymbolHelper;
 import org.drools.drlx.completion.DrlxFoldingRangeHelper;
 import org.drools.drlx.completion.DrlxHoverHelper;
+import org.drools.drlx.completion.DrlxInlayHintHelper;
 import org.drools.drlx.completion.DrlxReferencesHelper;
 import org.drools.drlx.completion.semantic.MemberCompletionProvider;
 import org.drools.drlx.completion.semantic.SentinelExpressionTypeResolver;
@@ -33,6 +34,8 @@ import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.FoldingRange;
 import org.eclipse.lsp4j.FoldingRangeRequestParams;
 import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.InlayHint;
+import org.eclipse.lsp4j.InlayHintParams;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
@@ -159,6 +162,16 @@ public class DrlxLspDocumentService implements TextDocumentService {
             String text = sourcesMap.get(uri);
             if (text == null) return Collections.emptyList();
             return DrlxFoldingRangeHelper.foldingRanges(text);
+        });
+    }
+
+    @Override
+    public CompletableFuture<List<InlayHint>> inlayHint(InlayHintParams params) {
+        return CompletableFuture.supplyAsync(() -> {
+            String uri = params.getTextDocument().getUri();
+            String text = sourcesMap.get(uri);
+            if (text == null) return Collections.emptyList();
+            return DrlxInlayHintHelper.inlayHints(text, params.getRange(), model);
         });
     }
 

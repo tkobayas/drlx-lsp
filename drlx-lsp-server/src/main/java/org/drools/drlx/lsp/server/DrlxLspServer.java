@@ -91,6 +91,7 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
         initializeResult.getCapabilities().setReferencesProvider(true);
         initializeResult.getCapabilities().setDocumentSymbolProvider(true);
         initializeResult.getCapabilities().setFoldingRangeProvider(true);
+        initializeResult.getCapabilities().setInlayHintProvider(true);
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }
 

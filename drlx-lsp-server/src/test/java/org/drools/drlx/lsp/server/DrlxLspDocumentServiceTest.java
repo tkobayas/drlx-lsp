@@ -19,6 +19,9 @@ import org.eclipse.lsp4j.FoldingRange;
 import org.eclipse.lsp4j.FoldingRangeKind;
 import org.eclipse.lsp4j.FoldingRangeRequestParams;
 import org.eclipse.lsp4j.SymbolKind;
+import org.eclipse.lsp4j.InlayHint;
+import org.eclipse.lsp4j.InlayHintParams;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.junit.jupiter.api.Test;
@@ -311,5 +314,32 @@ class DrlxLspDocumentServiceTest {
                         tuple(0, 2, FoldingRangeKind.Comment),
                         tuple(3, 4, FoldingRangeKind.Imports),
                         tuple(6, 11, FoldingRangeKind.Region));
+    }
+
+    @Test
+    void inlayHint_returnsHintsForDrlxFile() throws Exception {
+        String content =
+                "import org.drools.drlx.domain.Person;\n"     // 0
+                + "import org.drools.drlx.domain.MyUnit;\n"    // 1
+                + "unit MyUnit;\n"                             // 2
+                + "rule R1 {\n"                                // 3
+                + "    var p = /persons,\n"                    // 4
+                + "    do {\n"                                 // 5
+                + "        var x = \"abc\";\n"                 // 6
+                + "    }\n"                                    // 7
+                + "}\n";                                       // 8
+
+        DrlxLspDocumentService service = getDrlxLspDocumentService(content);
+
+        InlayHintParams params = new InlayHintParams(
+                new TextDocumentIdentifier("myDocument"),
+                new Range(new Position(0, 0), new Position(8, 0)));
+
+        List<InlayHint> hints = service.inlayHint(params).get();
+
+        assertThat(hints).isNotEmpty();
+        assertThat(hints)
+                .extracting(h -> h.getPosition().getLine(), h -> h.getLabel().getLeft())
+                .contains(tuple(4, ": Person"), tuple(6, ": String"));
     }
 }

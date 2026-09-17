@@ -78,6 +78,14 @@ public class CompletionContext {
         return diagnostics;
     }
 
+    public WorkspaceSemanticModel model() {
+        return model;
+    }
+
+    public SentinelExpressionTypeResolver typeResolver() {
+        return typeResolver;
+    }
+
     public String unitClassName() {
         if (!unitClassNameResolved) {
             unitClassNameResolved = true;
@@ -329,7 +337,7 @@ public class CompletionContext {
         return null;
     }
 
-    SemanticType resolveEntryPointType(String entryPointName) {
+    public SemanticType resolveEntryPointType(String entryPointName) {
         String unitClass = unitClassName();
         if (unitClass == null) return null;
         String unitFqcn = resolveToFqcn(unitClass);
@@ -674,7 +682,7 @@ public class CompletionContext {
         return true;
     }
 
-    private SemanticType unwrapCollectionElementType(SemanticType type) {
+    public SemanticType unwrapCollectionElementType(SemanticType type) {
         if (!type.isReferenceType()) return null;
         var refType = type.resolvedType().asReferenceType();
         if (!isCollectionType(refType.getQualifiedName())) return null;
@@ -746,7 +754,7 @@ public class CompletionContext {
         }
     }
 
-    private SemanticType resolvePropertyType(SemanticType ownerType, String propertyName) {
+    public SemanticType resolvePropertyType(SemanticType ownerType, String propertyName) {
         if (!ownerType.isReferenceType()) return null;
         try {
             var refType = ownerType.resolvedType().asReferenceType();
@@ -887,7 +895,7 @@ public class CompletionContext {
                 .orElse(null);
     }
 
-    SemanticType resolveTypeToSemanticType(String typeName) {
+    public SemanticType resolveTypeToSemanticType(String typeName) {
         try {
             boolean isArray = typeName.endsWith("[]");
             String baseTypeName = isArray ? typeName.substring(0, typeName.indexOf('[')) : typeName;
