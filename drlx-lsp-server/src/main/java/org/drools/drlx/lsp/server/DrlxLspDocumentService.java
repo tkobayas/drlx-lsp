@@ -1,5 +1,6 @@
 package org.drools.drlx.lsp.server;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 import org.drools.drlx.completion.DrlxCompletionHelper;
 import org.drools.drlx.completion.DrlxDefinitionHelper;
 import org.drools.drlx.completion.DrlxDiagnosticHelper;
+import org.drools.drlx.completion.DrlxLintHelper;
 import org.drools.drlx.completion.DrlxDocumentSymbolHelper;
 import org.drools.drlx.completion.DrlxFoldingRangeHelper;
 import org.drools.drlx.completion.DrlxHoverHelper;
@@ -91,7 +93,9 @@ public class DrlxLspDocumentService implements TextDocumentService {
         if (text == null) {
             return Collections.emptyList();
         }
-        return DrlxDiagnosticHelper.validate(text);
+        List<Diagnostic> result = new ArrayList<>(DrlxDiagnosticHelper.validate(text));
+        result.addAll(DrlxLintHelper.lint(text));
+        return result;
     }
 
     @Override

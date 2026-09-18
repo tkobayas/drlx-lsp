@@ -23,9 +23,17 @@ public class TestHelperMethods {
         return ls.getTextDocumentService();
     }
 
+    /**
+     * Returns a server pre-loaded with the given document. The last
+     * {@code publishDiagnostics} call is captured in {@code capturedDiagnostics}.
+     */
     public static DrlxLspServer getDrlxLspServerForDocument(String drlx) {
+        return getDrlxLspServerForDocument(drlx, new ArrayList<>());
+    }
+
+    public static DrlxLspServer getDrlxLspServerForDocument(String drlx,
+                                                              List<Diagnostic> capturedDiagnostics) {
         DrlxLspServer ls = new DrlxLspServer();
-        List<Diagnostic> diagnostics = new ArrayList<>();
         ls.connect(new LanguageClient() {
             @Override
             public void telemetryEvent(Object object) {
@@ -42,8 +50,8 @@ public class TestHelperMethods {
 
             @Override
             public void publishDiagnostics(PublishDiagnosticsParams d) {
-                diagnostics.clear();
-                diagnostics.addAll(d.getDiagnostics());
+                capturedDiagnostics.clear();
+                capturedDiagnostics.addAll(d.getDiagnostics());
             }
 
             @Override

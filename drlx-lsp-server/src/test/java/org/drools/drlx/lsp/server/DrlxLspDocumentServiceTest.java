@@ -1,7 +1,9 @@
 package org.drools.drlx.lsp.server;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.DefinitionParams;
@@ -341,5 +343,23 @@ class DrlxLspDocumentServiceTest {
         assertThat(hints)
                 .extracting(h -> h.getPosition().getLine(), h -> h.getLabel().getLeft())
                 .contains(tuple(4, ": Person"), tuple(6, ": String"));
+    }
+
+    @Test
+    void lint_reportsUnclosedOopathBracket() throws Exception {
+        List<Diagnostic> captured = new ArrayList<>();
+        String drlx = """
+                rule R1 {
+                    var $p = /persons[ age > 18,
+                    do { }
+                }
+                """;
+
+        TestHelperMethods.getDrlxLspServerForDocument(drlx, captured);
+        // publishDiagnostics is called asynchronously; wait briefly
+        Thread.sleep(200);
+
+        assertThat(captured)
+                .anyMatch(d -> "drlx-lint".equals(d.getSource()));
     }
 }
