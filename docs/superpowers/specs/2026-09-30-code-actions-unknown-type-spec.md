@@ -21,7 +21,7 @@ This feature implements:
 +-------------------------------------------------------------+
 |                      ClassIndex (#13)                       |
 | - Scans directories & JARs for .class files                 |
-| - Maps simpleName -> List<FQCN>                             |
+| - Maps simpleName -> List<FQCN> (exact matches)             |
 | - Provides simpleNames() for typo suggestion candidate pool |
 +------------------------------+------------------------------+
                                |
@@ -29,15 +29,19 @@ This feature implements:
 +-------------------------------------------------------------+
 |               WorkspaceSemanticModel Integration            |
 | - Stores & updates ClassIndex on rebuild()                  |
-| - Exposes classIndex()                                      |
+| - Tracks isClasspathResolved readiness flag                 |
+| - Exposes classIndex() & isClasspathResolved()              |
 +------------------------------+------------------------------+
                                |
                                v
 +-------------------------------------------------------------+
 |              DrlxLintHelper.lintUnknownTypes                |
-| - Finds type references in DRLX (OOPath, RHS new T, etc.)   |
-| - Checks if type is known via TypeSolver / ClassIndex       |
-| - Computes closest typo suggestion (Levenshtein <= 2)       |
+| - Skips if classpath is not yet fully resolved              |
+| - Finds actual Java type references (explicit variable      |
+|   type declarations, RHS new T(...), etc.)                  |
+|   (Explicitly NOT OOPath roots /persons which are fields)   |
+| - Resolves types with TypeSolver / ClassIndex (exact match) |
+| - Suggests resolvable typo candidate (Levenshtein <= 2)     |
 | - Emits Diagnostic with source="drlx-type", data=suggestion |
 +------------------------------+------------------------------+
                                |
@@ -66,7 +70,10 @@ This feature implements:
       public static ClassIndex merge(ClassIndex base, ClassIndex overlay);
 
       public Set<String> simpleNames();
-      public List<String> getMatching(String prefix);
+      public List<String> getBySimpleName(String simpleName); // Exact match
+      public boolean containsSimpleName(String simpleName);   // Exact match check
+      public boolean containsFqcn(String fqcn);               // Exact FQCN check
+      public List<String> getMatching(String prefix);         // Prefix search for completions
       public List<String> getAll();
       public int size();
   }
@@ -77,25 +84,40 @@ This feature implements:
   - Filter out inner classes (`$`), `module-info`, `package-info`.
   - Key map by simple class name (e.g. `"Person"` -> `["com.example.Person"]`).
 
-### 3.2. `WorkspaceSemanticModel` Integration
+### 3.2. `WorkspaceSemanticModel` Integration & Classpath Readiness
 
-- Field: `private volatile ClassIndex classIndex = ClassIndex.empty();`
-- In `rebuild(ClasspathProvider classpathProvider)`:
+- Fields:
+  - `private volatile ClassIndex classIndex = ClassIndex.empty();`
+  - `private volatile boolean classpathResolved = false;`
+- In `rebuild(ClasspathProvider classpathProvider, boolean resolved)`:
   - `this.classIndex = ClassIndex.build(classpathProvider.classpathEntries());`
-- Getter: `public ClassIndex classIndex() { return classIndex; }`
+  - `this.classpathResolved = resolved;`
+- Getters:
+  - `public ClassIndex classIndex() { return classIndex; }`
+  - `public boolean isClasspathResolved() { return classpathResolved; }`
 
 ### 3.3. `DrlxLintHelper.lintUnknownTypes`
 
+- **Readiness Gating**:
+  - If `model == null` or `!model.isClasspathResolved()`, skip `lintUnknownTypes` and return empty list to prevent false positives while Maven dependencies are resolving.
 - **Configuration**:
   - System property: `drlx.lsp.lint.unknownTypes` (default: `"warning"`, options: `off|hint|info|warning|error`).
-- **Detection Targets**:
-  - OOPath root identifiers / types (e.g. `var $p = /Persons[...]` or `/com.sample.Person[...]` -> check type `Persons` or `Person`).
-  - RHS object instantiations (`new Typename(...)`).
-  - Any declared package/imports are taken into account.
-- **Verification & Typo Matching**:
-  - If a type cannot be solved via `WorkspaceSemanticModel.typeSolver()` or `ClassIndex.getMatching(simpleName)`:
-    - Search `ClassIndex.simpleNames()` (plus common `java.lang.*` types) for candidates with Levenshtein distance $\le 2$.
-    - Pick candidate with minimal edit distance.
+- **Detection Targets (Actual Java Type Positions)**:
+  - Explicit pattern variable types: e.g. `Person $p : /persons[...]` or `Person $p = /persons[...]`.
+  - Explicit local variable types: e.g. `Person p = ...`.
+  - Consequence / RHS object instantiations: e.g. `new Preson(...)`.
+  - **Explicitly Excluded**: OOPath root names (e.g. `/persons`) — these are rule-unit DataSource fields or query names, resolved via unit context, not Java type references.
+- **Verification (Exact Match)**:
+  - Fully qualified names (containing `.`): verified against `model.typeSolver()` or `model.classIndex().containsFqcn(fqcn)`.
+  - Simple names: resolved against document imports, current unit/package, `java.lang.*`, or single unambiguous match in `model.classIndex()`.
+  - Exact match is required — prefix matches (`getMatching()`) are NOT used for existence checks.
+- **Typo Candidate Pool (Resolvability Guarantee)**:
+  - Only propose typo suggestions that will actually resolve at the use site:
+    - Types already imported in the document.
+    - Types in `java.lang.*`.
+    - Types in the current unit/package.
+    - Types in `model.classIndex().simpleNames()` whose package is already imported or single known type.
+  - Compute Levenshtein distance ($\le 2$) against this resolvable candidate pool.
 - **Diagnostic Generation**:
   - `range`: span of the misspelled type name.
   - `source`: `"drlx-type"`.
@@ -132,6 +154,7 @@ This feature implements:
 - **`DrlxLspServer`**:
   - `initializeResult.getCapabilities().setCodeActionProvider(true);`
 - **`DrlxLspDocumentService`**:
+  - Expose `revalidateOpenDocuments()` to re-run validation on all open documents and publish diagnostics once Maven background resolution completes in `DrlxLspServer`.
   - Override `codeAction(CodeActionParams params)`:
     ```java
     @Override
@@ -156,6 +179,9 @@ This feature implements:
         return result;
     }
     ```
+- **`DrlxLspServer`**:
+  - On Phase 1 (instant build outputs): calls `model.rebuild(new MavenClasspathProvider(buildOutputDirs), false)`.
+  - On Phase 2 completion (full Maven resolution): calls `model.rebuild(new MavenClasspathProvider(fullClasspath), true)`, then triggers `textService.revalidateOpenDocuments()`.
 
 ---
 
@@ -163,13 +189,18 @@ This feature implements:
 
 1. **`ClassIndexTest`**:
    - Verify scanning classes from directory and JAR.
-   - Verify `simpleNames()`, `getMatching()`, filtering of inner classes.
+   - Verify exact lookup (`containsSimpleName`, `getBySimpleName`, `containsFqcn`) vs prefix search (`getMatching`).
+   - Verify `new Perso()` is not matched as exact when only `Person` is present.
+   - Verify filtering of inner classes (`$`), `module-info`, `package-info`.
 2. **`DrlxLintHelperTest` (unknown types)**:
-   - Verify `lintUnknownTypes` identifies misspelled type names (e.g. `Preson` -> `Person`).
-   - Verify suggestion attached to `Diagnostic.data`.
+   - Verify `lintUnknownTypes` identifies misspelled type names (e.g. `Preson $p : /persons` -> `Person`).
+   - Negative tests: Verify OOPath data sources (`/persons`) and queries are NOT treated as unknown types.
+   - Verify readiness gating: returns empty when `classpathResolved == false`.
+   - Verify suggestions are resolvable at the use site (imported or in package).
    - Verify valid types produce no diagnostics.
 3. **`DrlxCodeActionHelperTest`**:
    - Verify `codeActions()` produces `Replace with 'Person'` QuickFix for diagnostic with `data = "Person"`.
    - Verify non-overlapping ranges or unrelated diagnostics produce no actions.
-4. **Server Integration (`DrlxLspDocumentServiceTest`)**:
+4. **Server Integration (`DrlxLspDocumentServiceTest` & `DrlxLspServerTest`)**:
    - Test LSP `codeAction` request returns quick fix edit.
+   - Test delayed classpath resolution: opening file before resolution yields no false warning; completing resolution revalidates and refreshes diagnostics.
