@@ -11,6 +11,7 @@ import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.eclipse.lsp4j.CompletionOptions;
+import org.eclipse.lsp4j.RenameOptions;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.MessageParams;
@@ -94,6 +95,7 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
         initializeResult.getCapabilities().setFoldingRangeProvider(true);
         initializeResult.getCapabilities().setInlayHintProvider(true);
         initializeResult.getCapabilities().setCodeActionProvider(true);
+        initializeResult.getCapabilities().setRenameProvider(new RenameOptions(true));
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }
 

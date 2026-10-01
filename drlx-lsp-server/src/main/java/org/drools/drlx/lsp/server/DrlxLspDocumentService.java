@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import org.drools.drlx.completion.DrlxCodeActionHelper;
 import org.drools.drlx.completion.DrlxCompletionHelper;
 import org.drools.drlx.completion.DrlxDefinitionHelper;
+import org.drools.drlx.completion.DrlxRenameHelper;
 import org.drools.drlx.completion.DrlxDiagnosticHelper;
 import org.drools.drlx.completion.DrlxDocumentSymbolHelper;
 import org.drools.drlx.completion.DrlxFoldingRangeHelper;
@@ -48,10 +49,18 @@ import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.MessageParams;
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.PrepareRenameDefaultBehavior;
+import org.eclipse.lsp4j.PrepareRenameParams;
+import org.eclipse.lsp4j.PrepareRenameResult;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ReferenceParams;
+import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.SymbolInformation;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.eclipse.lsp4j.jsonrpc.messages.Either3;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -204,6 +213,30 @@ public class DrlxLspDocumentService implements TextDocumentService {
             return actions.stream()
                     .map(Either::<Command, CodeAction>forRight)
                     .collect(Collectors.toList());
+        });
+    }
+
+    @Override
+    public CompletableFuture<Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>> prepareRename(PrepareRenameParams params) {
+        return CompletableFuture.supplyAsync(() -> {
+            String uri = params.getTextDocument().getUri();
+            String text = sourcesMap.get(uri);
+            if (text == null) return null;
+            DrlxRenameHelper.PreparedRename prepared =
+                    DrlxRenameHelper.prepare(uri, text, params.getPosition(), model);
+            if (prepared == null) return null;
+            return Either3.forSecond(new PrepareRenameResult(prepared.range(), prepared.placeholder()));
+        });
+    }
+
+    @Override
+    public CompletableFuture<WorkspaceEdit> rename(RenameParams params) {
+        return CompletableFuture.supplyAsync(() -> {
+            String uri = params.getTextDocument().getUri();
+            String text = sourcesMap.get(uri);
+            if (text == null) return null;
+            return DrlxRenameHelper.rename(uri, text, params.getPosition(),
+                    params.getNewName(), model);
         });
     }
 
