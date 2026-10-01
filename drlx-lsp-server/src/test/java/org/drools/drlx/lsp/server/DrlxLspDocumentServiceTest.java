@@ -25,6 +25,13 @@ import org.eclipse.lsp4j.InlayHint;
 import org.eclipse.lsp4j.InlayHintParams;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.CodeAction;
+import org.eclipse.lsp4j.CodeActionContext;
+import org.eclipse.lsp4j.CodeActionKind;
+import org.eclipse.lsp4j.CodeActionParams;
+import org.eclipse.lsp4j.Command;
+import org.eclipse.lsp4j.InitializeParams;
+import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.junit.jupiter.api.Test;
 
@@ -361,6 +368,51 @@ class DrlxLspDocumentServiceTest {
 
         assertThat(captured)
                 .anyMatch(d -> "drlx-lint".equals(d.getSource()));
+    }
+
+    @Test
+    void codeAction_unknownTypeQuickFix() throws Exception {
+        List<Diagnostic> captured = new ArrayList<>();
+        String drlx = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1 {
+                    Preson p : /persons,
+                    do { }
+                }
+                """;
+
+        DrlxLspServer server = TestHelperMethods.getDrlxLspServerForDocument(drlx, captured);
+        // publishDiagnostics is asynchronous
+        Thread.sleep(200);
+
+        assertThat(captured).anyMatch(d -> "drlx-type".equals(d.getSource()));
+        Diagnostic typoDiag = captured.stream().filter(d -> "drlx-type".equals(d.getSource())).findFirst().orElseThrow();
+
+        CodeActionParams params = new CodeActionParams();
+        params.setTextDocument(new TextDocumentIdentifier("myDocument"));
+        params.setRange(new Range(new Position(6, 4), new Position(6, 10)));
+        params.setContext(new CodeActionContext(List.of(typoDiag)));
+
+        List<Either<Command, CodeAction>> actions = server.getTextDocumentService().codeAction(params).get();
+        assertThat(actions).hasSize(1);
+        assertThat(actions.get(0).isRight()).isTrue();
+
+        CodeAction action = actions.get(0).getRight();
+        assertThat(action.getTitle()).isEqualTo("Replace with 'Person'");
+        assertThat(action.getKind()).isEqualTo(CodeActionKind.QuickFix);
+        assertThat(action.getEdit().getChanges()).containsKey("myDocument");
+    }
+
+    @Test
+    void codeActionCapabilityAdvertised() throws Exception {
+        DrlxLspServer server = new DrlxLspServer();
+        InitializeParams params = new InitializeParams();
+        InitializeResult result = server.initialize(params).get();
+        assertThat(result.getCapabilities().getCodeActionProvider().getLeft()).isTrue();
     }
 }
 

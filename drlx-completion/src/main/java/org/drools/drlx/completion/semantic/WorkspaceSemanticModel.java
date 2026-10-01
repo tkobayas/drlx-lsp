@@ -23,9 +23,11 @@ public class WorkspaceSemanticModel implements WorkspaceTypes {
 
     private volatile CombinedTypeSolver typeSolver;
     private volatile ClassLoader projectClassLoader;
+    private volatile ClassIndex classIndex = ClassIndex.empty();
+    private volatile boolean classpathResolved = false;
 
     public WorkspaceSemanticModel(ClasspathProvider classpathProvider) {
-        rebuild(classpathProvider);
+        rebuild(classpathProvider, true);
     }
 
     public TypeSolver typeSolver() {
@@ -36,13 +38,28 @@ public class WorkspaceSemanticModel implements WorkspaceTypes {
         return projectClassLoader;
     }
 
+    public ClassIndex classIndex() {
+        return classIndex;
+    }
+
+    public boolean isClasspathResolved() {
+        return classpathResolved;
+    }
+
     public CompletionContext createContext(DrlxParser parser, ParseTree tree, int caretTokenIndex) {
         return new CompletionContext(this, parser, tree, caretTokenIndex);
     }
 
     public void rebuild(ClasspathProvider classpathProvider) {
-        this.projectClassLoader = buildClassLoader(classpathProvider.classpathEntries());
+        rebuild(classpathProvider, true);
+    }
+
+    public void rebuild(ClasspathProvider classpathProvider, boolean resolved) {
+        Set<Path> entries = classpathProvider.classpathEntries();
+        this.projectClassLoader = buildClassLoader(entries);
         this.typeSolver = buildTypeSolver(projectClassLoader);
+        this.classIndex = ClassIndex.build(entries);
+        this.classpathResolved = resolved;
     }
 
     private static CombinedTypeSolver buildTypeSolver(ClassLoader classLoader) {

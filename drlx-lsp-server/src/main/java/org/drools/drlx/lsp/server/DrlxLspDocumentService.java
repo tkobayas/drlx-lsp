@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 
 import java.util.stream.Collectors;
 
+import org.drools.drlx.completion.DrlxCodeActionHelper;
 import org.drools.drlx.completion.DrlxCompletionHelper;
 import org.drools.drlx.completion.DrlxDefinitionHelper;
 import org.drools.drlx.completion.DrlxDiagnosticHelper;
@@ -22,6 +23,9 @@ import org.drools.drlx.completion.DrlxReferencesHelper;
 import org.drools.drlx.completion.semantic.MemberCompletionProvider;
 import org.drools.drlx.completion.semantic.SentinelExpressionTypeResolver;
 import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
+import org.eclipse.lsp4j.CodeAction;
+import org.eclipse.lsp4j.CodeActionParams;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
@@ -94,8 +98,21 @@ public class DrlxLspDocumentService implements TextDocumentService {
             return Collections.emptyList();
         }
         List<Diagnostic> result = new ArrayList<>(DrlxDiagnosticHelper.validate(text));
-        result.addAll(DrlxLintHelper.lint(text));
+        result.addAll(DrlxLintHelper.lint(text, model));
         return result;
+    }
+
+    public void revalidateOpenDocuments() {
+        if (server.getClient() == null) {
+            return;
+        }
+        for (String uri : sourcesMap.keySet()) {
+            CompletableFuture.runAsync(() ->
+                    server.getClient().publishDiagnostics(
+                            new PublishDiagnosticsParams(uri, validate(uri))
+                    )
+            );
+        }
     }
 
     @Override
@@ -176,6 +193,17 @@ public class DrlxLspDocumentService implements TextDocumentService {
             String text = sourcesMap.get(uri);
             if (text == null) return Collections.emptyList();
             return DrlxInlayHintHelper.inlayHints(text, params.getRange(), model);
+        });
+    }
+
+    @Override
+    public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(CodeActionParams params) {
+        return CompletableFuture.supplyAsync(() -> {
+            String uri = params.getTextDocument().getUri();
+            List<CodeAction> actions = DrlxCodeActionHelper.codeActions(uri, params.getRange(), params.getContext());
+            return actions.stream()
+                    .map(Either::<Command, CodeAction>forRight)
+                    .collect(Collectors.toList());
         });
     }
 

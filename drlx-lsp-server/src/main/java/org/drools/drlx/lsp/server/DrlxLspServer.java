@@ -57,10 +57,10 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
                 Path workspaceRoot = Paths.get(URI.create(rootUri));
                 logger.info("initialize: workspaceRoot={}", workspaceRoot);
 
-                // Phase 1: instant — target/classes only (no Maven invocation)
+                // Phase 1: instant — target/classes only (no Maven invocation), classpath not yet fully resolved
                 Set<Path> buildOutputDirs = MavenClasspathResolver.resolveBuildOutputDirs(workspaceRoot);
                 logger.info("initialize phase 1: buildOutputDirs={}", buildOutputDirs);
-                model.rebuild(new MavenClasspathProvider(buildOutputDirs));
+                model.rebuild(new MavenClasspathProvider(buildOutputDirs), false);
 
                 // Phase 2: background — full Maven dependency resolution
                 CompletableFuture.runAsync(() -> {
@@ -68,7 +68,8 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
                         logger.info("initialize phase 2: resolving Maven classpath...");
                         Set<Path> fullClasspath = MavenClasspathResolver.resolve(workspaceRoot);
                         logger.info("initialize phase 2: resolved {} classpath entries", fullClasspath.size());
-                        model.rebuild(new MavenClasspathProvider(fullClasspath));
+                        model.rebuild(new MavenClasspathProvider(fullClasspath), true);
+                        textService.revalidateOpenDocuments();
                     } catch (Exception e) {
                         logger.error("initialize phase 2: Maven classpath resolution failed", e);
                         if (client != null) {
@@ -92,6 +93,7 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
         initializeResult.getCapabilities().setDocumentSymbolProvider(true);
         initializeResult.getCapabilities().setFoldingRangeProvider(true);
         initializeResult.getCapabilities().setInlayHintProvider(true);
+        initializeResult.getCapabilities().setCodeActionProvider(true);
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }
 
