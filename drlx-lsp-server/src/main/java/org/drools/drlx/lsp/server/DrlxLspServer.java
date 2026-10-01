@@ -101,6 +101,7 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
 
     @Override
     public CompletableFuture<Object> shutdown() {
+        model.classMemberIndex().close();
         return CompletableFuture.completedFuture(null);
     }
 
