@@ -12,6 +12,7 @@ import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.drools.drlx.completion.semantic.AccumulateFunctionTypes;
 import org.drools.drlx.completion.semantic.CompletionContext;
 import org.drools.drlx.completion.semantic.CompletionExpression;
 import org.drools.drlx.completion.semantic.ExpressionTypeResolver;
@@ -136,11 +137,8 @@ public class DrlxCompletionHelper {
                 .toList();
     }
 
-    private static final List<String> ACCUMULATE_FUNCTIONS =
-            List.of("avg", "sum", "min", "max", "count", "collectList", "collectSet");
-
     private List<CompletionItem> resolveAccumulateFunctionNames() {
-        return ACCUMULATE_FUNCTIONS.stream()
+        return AccumulateFunctionTypes.functionNames().stream()
                 .map(name -> createCompletionItem(name, CompletionItemKind.Function))
                 .toList();
     }

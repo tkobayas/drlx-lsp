@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.drools.drlx.completion.semantic.AccumulateFunctionTypes;
 import org.drools.drlx.completion.semantic.CompletionContext;
 import org.drools.drlx.completion.semantic.SemanticType;
 import org.drools.drlx.completion.semantic.VisibleSymbols;
@@ -120,25 +121,17 @@ public final class DrlxInlayHintHelper {
     private static void processAccumulateItem(AccumulateItemContext accItem, CompletionContext ctx, List<InlayHint> hints) {
         if (accItem.VAR() != null && accItem.identifier() != null) {
             Token bindToken = accItem.identifier().getStart();
-            SemanticType inferred = inferAccumulateResultType(accItem, ctx);
-            if (inferred != null) {
-                addTypeHint(bindToken, inferred, hints);
+            var accCall = accItem.accumulateCall();
+            if (accCall != null && accCall.qualifiedName() != null) {
+                String funcName = accCall.qualifiedName().getText();
+                SemanticType inferred = AccumulateFunctionTypes.resultType(funcName)
+                        .map(ctx::resolveTypeToSemanticType)
+                        .orElse(null);
+                if (inferred != null) {
+                    addTypeHint(bindToken, inferred, hints);
+                }
             }
         }
-    }
-
-    private static SemanticType inferAccumulateResultType(AccumulateItemContext accItem, CompletionContext ctx) {
-        var accCall = accItem.accumulateCall();
-        if (accCall == null || accCall.qualifiedName() == null) return null;
-        String funcName = accCall.qualifiedName().getText();
-        String inferredType = switch (funcName) {
-            case "sum", "avg", "min", "max" -> "Number";
-            case "count" -> "Long";
-            case "collectList" -> "java.util.List";
-            case "collectSet" -> "java.util.Set";
-            default -> "Object";
-        };
-        return ctx.resolveTypeToSemanticType(inferredType);
     }
 
     private static void processOopathExpression(OopathExpressionContext oopathExpr, CompletionContext ctx, List<InlayHint> hints) {

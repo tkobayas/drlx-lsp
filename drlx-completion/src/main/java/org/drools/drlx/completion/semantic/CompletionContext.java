@@ -223,8 +223,14 @@ public class CompletionContext {
                 SemanticType st = resolveTypeToSemanticType(accItem.typeType().getText());
                 if (st != null) builder.add(bindName, st, accRange);
             } else if (accItem.VAR() != null) {
-                SemanticType inferred = inferAccumulateResultType(accItem);
-                if (inferred != null) builder.add(bindName, inferred, accRange);
+                var accCall = accItem.accumulateCall();
+                if (accCall != null && accCall.qualifiedName() != null) {
+                    String funcName = accCall.qualifiedName().getText();
+                    SemanticType inferred = AccumulateFunctionTypes.resultType(funcName)
+                            .map(this::resolveTypeToSemanticType)
+                            .orElse(null);
+                    if (inferred != null) builder.add(bindName, inferred, accRange);
+                }
             }
             return;
         }
@@ -240,20 +246,6 @@ public class CompletionContext {
         if (root == null || root.identifier(0) == null) return null;
         String entryPointName = root.identifier(0).getText();
         return resolveEntryPointType(entryPointName);
-    }
-
-    private SemanticType inferAccumulateResultType(AccumulateItemContext accItem) {
-        var accCall = accItem.accumulateCall();
-        if (accCall == null || accCall.qualifiedName() == null) return null;
-        String funcName = accCall.qualifiedName().getText();
-        String inferredType = switch (funcName) {
-            case "sum", "avg", "min", "max" -> "Number";
-            case "count" -> "Long";
-            case "collectList" -> "java.util.List";
-            case "collectSet" -> "java.util.Set";
-            default -> "Object";
-        };
-        return resolveTypeToSemanticType(inferredType);
     }
 
     private void extractConstraintBindings(RuleDeclarationContext rule, VisibleSymbols.Builder builder) {
