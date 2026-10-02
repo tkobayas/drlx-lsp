@@ -1,7 +1,11 @@
 package org.drools.drlx.lsp.server;
 
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -278,6 +282,49 @@ public class DrlxLspDocumentService implements TextDocumentService {
         }
 
         return completionItems;
+    }
+
+    /**
+     * カレントドキュメントと同じディレクトリにある未保存の兄弟 {@code .drlx} バッファを返す。
+     *
+     * <p>URI キーの {@code sourcesMap} を Path キー（絶対・正規化済み）に変換し、
+     * カレントファイル以外の同ディレクトリの {@code .drlx} ファイルのみを含める。
+     * {@code documentPath} が {@code null} の場合は空マップを返す。
+     * ファイル URI 以外のエントリは無視する。
+     *
+     * @param documentPath  カレントドキュメントのパス。{@code null} 可。
+     * @return              Path → テキストのマップ（変更不可）
+     */
+    private Map<Path, String> openSiblings(Path documentPath) {
+        if (documentPath == null) {
+            return Collections.emptyMap();
+        }
+        Path docNorm = documentPath.toAbsolutePath().normalize();
+        Path dir = docNorm.getParent();
+        if (dir == null) {
+            return Collections.emptyMap();
+        }
+        Map<Path, String> result = new HashMap<>();
+        for (Map.Entry<String, String> e : sourcesMap.entrySet()) {
+            Path p;
+            try {
+                p = Paths.get(URI.create(e.getKey()));
+            } catch (Exception ex) {
+                continue;
+            }
+            Path norm = p.toAbsolutePath().normalize();
+            if (norm.equals(docNorm)) {
+                continue;
+            }
+            if (!norm.toString().endsWith(".drlx")) {
+                continue;
+            }
+            if (!dir.equals(norm.getParent())) {
+                continue;
+            }
+            result.put(norm, e.getValue());
+        }
+        return Collections.unmodifiableMap(result);
     }
 
     @Override
