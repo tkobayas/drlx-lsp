@@ -8,8 +8,7 @@ import java.util.Optional;
 
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.drools.drlx.completion.semantic.CompletionContext;
+import org.drools.drlx.completion.semantic.LhsBindingResolver;
 import org.drools.drlx.completion.semantic.SymbolEntry;
 import org.drools.drlx.completion.semantic.TokenRange;
 import org.drools.drlx.completion.semantic.VisibleSymbols;
@@ -37,7 +36,7 @@ public final class DrlxRenameHelper {
         }
 
         DrlxParser parser = DrlxHoverHelper.createParser(text);
-        ParseTree parseTree = parser.drlxStart();
+        parser.drlxStart();
         CommonTokenStream tokens = (CommonTokenStream) parser.getTokenStream();
 
         Token token = DrlxHoverHelper.findTokenAt(tokens, position);
@@ -47,8 +46,7 @@ public final class DrlxRenameHelper {
         String word = token.getText();
         int tokenIndex = token.getTokenIndex();
 
-        CompletionContext ctx = model.createContext(parser, parseTree, tokenIndex);
-        VisibleSymbols symbols = ctx.buildVisibleSymbols();
+        VisibleSymbols symbols = LhsBindingResolver.resolve(text, tokenIndex, model);
         Optional<SymbolEntry> entry = symbols.lookupEntry(word);
 
         if (entry.isEmpty()) {
@@ -70,7 +68,7 @@ public final class DrlxRenameHelper {
         }
 
         DrlxParser parser = DrlxHoverHelper.createParser(text);
-        ParseTree parseTree = parser.drlxStart();
+        parser.drlxStart();
         CommonTokenStream tokens = (CommonTokenStream) parser.getTokenStream();
 
         Token token = DrlxHoverHelper.findTokenAt(tokens, position);
@@ -80,8 +78,7 @@ public final class DrlxRenameHelper {
         String word = token.getText();
         int tokenIndex = token.getTokenIndex();
 
-        CompletionContext ctx = model.createContext(parser, parseTree, tokenIndex);
-        VisibleSymbols symbols = ctx.buildVisibleSymbols();
+        VisibleSymbols symbols = LhsBindingResolver.resolve(text, tokenIndex, model);
         Optional<SymbolEntry> entry = symbols.lookupEntry(word);
 
         if (entry.isEmpty()) {
