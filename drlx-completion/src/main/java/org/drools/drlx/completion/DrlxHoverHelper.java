@@ -12,6 +12,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.drools.drlx.completion.semantic.CompletionContext;
+import org.drools.drlx.completion.semantic.LhsBindingResolver;
 import org.drools.drlx.completion.semantic.SemanticType;
 import org.drools.drlx.completion.semantic.SentinelExpressionTypeResolver;
 import org.drools.drlx.completion.semantic.TokenWalker;
@@ -57,7 +58,7 @@ public final class DrlxHoverHelper {
             if (dotHover != null) return dotHover;
         }
 
-        VisibleSymbols symbols = ctx.buildVisibleSymbols();
+        VisibleSymbols symbols = LhsBindingResolver.resolve(ctx);
         Optional<SemanticType> symbolType = symbols.lookup(word);
         if (symbolType.isPresent()) {
             return renderSymbol(word, symbolType.get());
@@ -85,7 +86,7 @@ public final class DrlxHoverHelper {
             prefixText = prefixText.substring(0, prefixText.lastIndexOf('.'));
         }
 
-        VisibleSymbols symbols = ctx.buildVisibleSymbols();
+        VisibleSymbols symbols = LhsBindingResolver.resolve(ctx);
         SentinelExpressionTypeResolver resolver = new SentinelExpressionTypeResolver();
         Optional<SemanticType> prefixType = resolver.resolveExpressionType(
                 prefixText, symbols, ctx.imports(), model.projectClassLoader());

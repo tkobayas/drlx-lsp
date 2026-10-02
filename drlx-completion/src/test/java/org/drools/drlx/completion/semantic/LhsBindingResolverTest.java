@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.drools.drlx.parser.DrlxLexer;
 import org.drools.drlx.parser.DrlxParser;
 import org.junit.jupiter.api.Test;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -65,6 +66,27 @@ class LhsBindingResolverTest {
     @Test
     void resolveAll_nullText_returnsEmpty() {
         VisibleSymbols symbols = LhsBindingResolver.resolveAll(null, model());
+        assertThat(symbols.isEmpty()).isTrue();
+    }
+
+    @Test
+    void resolve_withContext_returnsBinding() {
+        WorkspaceSemanticModel m = model();
+        int tokenIndex = tokenIndexOf(DRLX_TEXT, "p");
+        ANTLRInputStream input = new ANTLRInputStream(DRLX_TEXT);
+        DrlxLexer lexer = new DrlxLexer(input);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        DrlxParser parser = new DrlxParser(tokens);
+        var parseTree = parser.drlxStart();
+        CompletionContext ctx = m.createContext(parser, parseTree, tokenIndex);
+
+        VisibleSymbols symbols = LhsBindingResolver.resolve(ctx);
+        assertThat(symbols.lookup("p")).isPresent();
+    }
+
+    @Test
+    void resolve_nullContext_returnsEmpty() {
+        VisibleSymbols symbols = LhsBindingResolver.resolve((CompletionContext) null);
         assertThat(symbols.isEmpty()).isTrue();
     }
 }

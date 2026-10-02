@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.drools.drlx.completion.semantic.CompletionContext;
 import org.drools.drlx.completion.semantic.LhsBindingResolver;
 import org.drools.drlx.completion.semantic.SymbolEntry;
 import org.drools.drlx.completion.semantic.TokenRange;
@@ -40,7 +41,8 @@ public class DrlxDefinitionHelper {
         String word = token.getText();
         int tokenIndex = token.getTokenIndex();
 
-        VisibleSymbols symbols = LhsBindingResolver.resolve(text, tokenIndex, model);
+        CompletionContext ctx = model.createContext(parser, parseTree, tokenIndex);
+        VisibleSymbols symbols = LhsBindingResolver.resolve(ctx);
         Optional<SymbolEntry> entry = symbols.lookupEntry(word);
         if (entry.isPresent() && entry.get().range() != null) {
             TokenRange defRange = entry.get().range();

@@ -22,6 +22,22 @@ public final class LhsBindingResolver {
     private LhsBindingResolver() {}
 
     /**
+     * Returns the bindings from an already-constructed {@link CompletionContext}.
+     *
+     * <p>This is the thin variant for callers (Hover, References) that need the
+     * {@code CompletionContext} for other purposes and already have one built.</p>
+     *
+     * @param ctx  completion context; if {@code null}, returns {@link VisibleSymbols#empty()}
+     * @return     visible symbols; never null
+     */
+    public static VisibleSymbols resolve(CompletionContext ctx) {
+        if (ctx == null) {
+            return VisibleSymbols.empty();
+        }
+        return ctx.buildVisibleSymbols();
+    }
+
+    /**
      * Returns the bindings visible at {@code tokenIndex} within {@code text},
      * scoped to the enclosing rule (caret-aware).
      *
