@@ -27,6 +27,7 @@ public class WorkspaceSemanticModel implements WorkspaceTypes {
     private volatile CombinedTypeSolver typeSolver;
     private volatile ClassLoader projectClassLoader;
     private volatile ClassIndex classIndex = ClassIndex.empty();
+    private volatile ClassIndex jarClassIndex = ClassIndex.empty();
     private volatile ClassMemberIndex classMemberIndex = ClassMemberIndex.empty();
     private volatile boolean classpathResolved = false;
     private volatile Set<Path> classpathEntries = Set.of();
@@ -78,10 +79,37 @@ public class WorkspaceSemanticModel implements WorkspaceTypes {
         this.classpathEntries = Set.copyOf(entries);
         this.projectClassLoader = buildClassLoader(entries);
         this.typeSolver = buildTypeSolver(projectClassLoader);
-        this.classIndex = ClassIndex.build(entries);
+
+        if (resolved) {
+            Set<Path> jars = new LinkedHashSet<>();
+            for (Path e : entries) {
+                if (!Files.isDirectory(e)) {
+                    jars.add(e);
+                }
+            }
+            this.jarClassIndex = jars.isEmpty() ? ClassIndex.empty() : ClassIndex.build(jars);
+            ClassIndex outputIndex = ClassIndex.build(buildOutputDirs());
+            this.classIndex = ClassIndex.merge(jarClassIndex, outputIndex);
+        } else {
+            this.classIndex = ClassIndex.build(entries);
+        }
+
         this.classMemberIndex.close();
         this.classMemberIndex = ClassMemberIndex.of(entries);
         this.classpathResolved = resolved;
+    }
+
+    public void rebuildOutputDirs() {
+        Set<Path> dirs = buildOutputDirs();
+        if (dirs.isEmpty() && jarClassIndex.size() == 0) {
+            return;
+        }
+        ClassIndex outputIndex = ClassIndex.build(dirs);
+        this.classIndex = ClassIndex.merge(jarClassIndex, outputIndex);
+        this.projectClassLoader = buildClassLoader(classpathEntries);
+        this.typeSolver = buildTypeSolver(projectClassLoader);
+        this.classMemberIndex.close();
+        this.classMemberIndex = ClassMemberIndex.of(classpathEntries);
     }
 
     private static CombinedTypeSolver buildTypeSolver(ClassLoader classLoader) {
