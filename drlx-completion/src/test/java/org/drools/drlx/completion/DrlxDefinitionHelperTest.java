@@ -1,12 +1,16 @@
 package org.drools.drlx.completion;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import org.drools.drlx.completion.semantic.CurrentClassloaderProvider;
 import org.drools.drlx.completion.semantic.WorkspaceSemanticModel;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -220,6 +224,113 @@ class DrlxDefinitionHelperTest {
     @Test
     void nullTextReturnsEmpty() {
         List<Location> defs = DrlxDefinitionHelper.definition(URI, null, new Position(0, 0), model);
+        assertThat(defs).isEmpty();
+    }
+
+    @Test
+    void javaSourceDefinition_directJump(@TempDir Path module) throws Exception {
+        Path classes = module.resolve("target/classes/org/example");
+        Files.createDirectories(classes);
+        Files.createFile(classes.resolve("Pet.class"));
+        Path srcDir = module.resolve("src/main/java/org/example");
+        Files.createDirectories(srcDir);
+        Path petJava = srcDir.resolve("Pet.java");
+        Files.writeString(petJava, "package org.example;\npublic class Pet {\n}\n");
+
+        Set<Path> entries = new java.util.LinkedHashSet<>(
+                new CurrentClassloaderProvider().classpathEntries());
+        entries.add(module.resolve("target/classes"));
+        WorkspaceSemanticModel testModel = new WorkspaceSemanticModel(() -> entries);
+
+        // Line 0: import org.example.Pet;
+        // Line 1:
+        // Line 2: rule R1 {
+        // Line 3:     do { Pet }
+        // Line 4: }
+        String text = """
+                import org.example.Pet;
+
+                rule R1 {
+                    do { Pet }
+                }
+                """;
+        // "Pet" in "do { Pet }" — line 3, char 9
+        List<Location> defs = DrlxDefinitionHelper.definition(URI, text, new Position(3, 9), testModel);
+
+        assertThat(defs).hasSize(1);
+        assertThat(defs.get(0).getUri()).isEqualTo(petJava.toUri().toString());
+        assertThat(defs.get(0).getRange().getStart().getLine()).isEqualTo(1);
+        assertThat(defs.get(0).getRange().getStart().getCharacter()).isEqualTo(13);
+    }
+
+    @Test
+    void javaSourceDefinition_fromImportLine(@TempDir Path module) throws Exception {
+        Path classes = module.resolve("target/classes/org/example");
+        Files.createDirectories(classes);
+        Files.createFile(classes.resolve("Pet.class"));
+        Path srcDir = module.resolve("src/main/java/org/example");
+        Files.createDirectories(srcDir);
+        Path petJava = srcDir.resolve("Pet.java");
+        Files.writeString(petJava, "package org.example;\npublic class Pet {\n}\n");
+
+        Set<Path> entries = new java.util.LinkedHashSet<>(
+                new CurrentClassloaderProvider().classpathEntries());
+        entries.add(module.resolve("target/classes"));
+        WorkspaceSemanticModel testModel = new WorkspaceSemanticModel(() -> entries);
+
+        // Line 0: import org.example.Pet;
+        String text = """
+                import org.example.Pet;
+
+                rule R1 {
+                    do { Pet }
+                }
+                """;
+        // "Pet" on the import line — line 0, char 19
+        // "import org.example.Pet;" → "Pet" starts at position 19
+        List<Location> defs = DrlxDefinitionHelper.definition(URI, text, new Position(0, 19), testModel);
+
+        assertThat(defs).hasSize(1);
+        assertThat(defs.get(0).getUri()).isEqualTo(petJava.toUri().toString());
+    }
+
+    @Test
+    void importFallback_whenNoJavaSource() {
+        // Uses the default model (CurrentClassloaderProvider).
+        // Domain class Person is in src/test/java, not src/main/java,
+        // so JavaSourceLocator returns null → falls back to import line.
+        String text = """
+                import org.drools.drlx.domain.Person;
+                import org.drools.drlx.domain.MyUnit;
+
+                unit MyUnit;
+
+                rule R1(Person p) {
+                    do { p }
+                }
+                """;
+        // "Person" in "rule R1(Person p)" — line 5, char 8
+        List<Location> defs = DrlxDefinitionHelper.definition(URI, text, new Position(5, 8), model);
+
+        assertThat(defs).hasSize(1);
+        assertThat(defs.get(0).getUri()).isEqualTo(URI);
+        // Falls back to import line — line 0
+        assertThat(defs.get(0).getRange().getStart().getLine()).isEqualTo(0);
+    }
+
+    @Test
+    void ambiguousTypeName_noJavaSource_noImport_returnsEmpty() {
+        // "String" is not imported and ClassIndex likely has multiple
+        // candidates (java.lang.String, etc.) — resolveFqcn should return null,
+        // and with no import match, result is empty.
+        String text = """
+                rule R1 {
+                    do { String }
+                }
+                """;
+        // "String" — line 1, char 9
+        List<Location> defs = DrlxDefinitionHelper.definition(URI, text, new Position(1, 9), model);
+
         assertThat(defs).isEmpty();
     }
 }

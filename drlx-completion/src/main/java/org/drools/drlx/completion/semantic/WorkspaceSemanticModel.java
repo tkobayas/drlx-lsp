@@ -3,8 +3,11 @@ package org.drools.drlx.completion.semantic;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -26,6 +29,7 @@ public class WorkspaceSemanticModel implements WorkspaceTypes {
     private volatile ClassIndex classIndex = ClassIndex.empty();
     private volatile ClassMemberIndex classMemberIndex = ClassMemberIndex.empty();
     private volatile boolean classpathResolved = false;
+    private volatile Set<Path> classpathEntries = Set.of();
 
     public WorkspaceSemanticModel(ClasspathProvider classpathProvider) {
         rebuild(classpathProvider, true);
@@ -51,6 +55,16 @@ public class WorkspaceSemanticModel implements WorkspaceTypes {
         return classpathResolved;
     }
 
+    public Set<Path> buildOutputDirs() {
+        Set<Path> dirs = new LinkedHashSet<>();
+        for (Path entry : classpathEntries) {
+            if (Files.isDirectory(entry)) {
+                dirs.add(entry);
+            }
+        }
+        return Collections.unmodifiableSet(dirs);
+    }
+
     public CompletionContext createContext(DrlxParser parser, ParseTree tree, int caretTokenIndex) {
         return new CompletionContext(this, parser, tree, caretTokenIndex);
     }
@@ -61,6 +75,7 @@ public class WorkspaceSemanticModel implements WorkspaceTypes {
 
     public void rebuild(ClasspathProvider classpathProvider, boolean resolved) {
         Set<Path> entries = classpathProvider.classpathEntries();
+        this.classpathEntries = Set.copyOf(entries);
         this.projectClassLoader = buildClassLoader(entries);
         this.typeSolver = buildTypeSolver(projectClassLoader);
         this.classIndex = ClassIndex.build(entries);

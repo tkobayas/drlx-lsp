@@ -54,12 +54,40 @@ public class DrlxDefinitionHelper {
             return List.of(new Location(uri, defRange.toLspRange()));
         }
 
+        String fqcn = resolveFqcn(word, parseTree, model);
+        if (fqcn != null) {
+            JavaSourceLocator.Result javaSource = JavaSourceLocator.locate(fqcn, model.buildOutputDirs());
+            if (javaSource != null) {
+                return List.of(javaSource.location);
+            }
+        }
+
         List<Location> importDef = resolveImportDefinition(word, position, parseTree, uri);
         if (!importDef.isEmpty()) {
             return importDef;
         }
 
         return Collections.emptyList();
+    }
+
+    private static String resolveFqcn(String word, ParseTree parseTree, WorkspaceSemanticModel model) {
+        DrlxCompilationUnitContext cu = findCompilationUnit(parseTree);
+        if (cu != null) {
+            for (ImportDeclarationContext imp : cu.importDeclaration()) {
+                if (imp.qualifiedName() == null) continue;
+                String fqcn = imp.qualifiedName().getText();
+                String simpleName = fqcn.contains(".")
+                        ? fqcn.substring(fqcn.lastIndexOf('.') + 1) : fqcn;
+                if (simpleName.equals(word)) {
+                    return fqcn;
+                }
+            }
+        }
+        List<String> candidates = model.classIndex().getBySimpleName(word);
+        if (candidates.size() == 1) {
+            return candidates.get(0);
+        }
+        return null;
     }
 
     private static List<Location> resolveImportDefinition(String word, Position position, ParseTree parseTree, String uri) {
