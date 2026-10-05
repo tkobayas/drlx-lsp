@@ -28,7 +28,7 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
     private static final Logger logger = LoggerFactory.getLogger(DrlxLspServer.class);
 
     private final DrlxLspDocumentService textService;
-    private final WorkspaceService workspaceService;
+    private final DrlxLspWorkspaceService workspaceService;
     private final WorkspaceSemanticModel model;
 
     private LanguageClient client;
@@ -36,7 +36,7 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
     public DrlxLspServer() {
         model = new WorkspaceSemanticModel(new CurrentClassloaderProvider());
         textService = new DrlxLspDocumentService(this, model);
-        workspaceService = new DrlxLspWorkspaceService();
+        workspaceService = new DrlxLspWorkspaceService(this);
     }
 
     @Override
@@ -99,8 +99,18 @@ public class DrlxLspServer implements LanguageServer, LanguageClientAware {
         return CompletableFuture.supplyAsync(() -> initializeResult);
     }
 
+    WorkspaceSemanticModel model() {
+        return model;
+    }
+
+    public void rebuildClassIndex() {
+        model.rebuildOutputDirs();
+        textService.revalidateOpenDocuments();
+    }
+
     @Override
     public CompletableFuture<Object> shutdown() {
+        workspaceService.shutdown();
         model.classMemberIndex().close();
         return CompletableFuture.completedFuture(null);
     }
