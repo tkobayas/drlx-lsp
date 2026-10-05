@@ -72,7 +72,10 @@ export function activate(context: vscode.ExtensionContext) {
         // Options to control the language client
         let clientOptions: LanguageClientOptions = {
             // Register the server for drlx documents
-            documentSelector: [{scheme: 'file', language: 'drlx'}]
+            documentSelector: [{scheme: 'file', language: 'drlx'}],
+            synchronize: {
+                fileEvents: vscode.workspace.createFileSystemWatcher('**/target/classes/**/*.class')
+            }
         };
         // Create the language client and start the client.
         let languageClient: LanguageClient = new LanguageClient('DRLX', 'DRLX Language Server', serverOptions, clientOptions);
