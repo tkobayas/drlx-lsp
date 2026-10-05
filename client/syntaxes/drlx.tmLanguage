@@ -46,7 +46,7 @@
 			<key>comment</key>
 			<string>Bound variables like $person, $myList</string>
 			<key>match</key>
-			<string>\$([A-Za-z][A-Za-z0-9_]+)</string>
+			<string>\$([A-Za-z][A-Za-z0-9_]*)</string>
 			<key>name</key>
 			<string>variable.parameter.source.drlx</string>
 		</dict>

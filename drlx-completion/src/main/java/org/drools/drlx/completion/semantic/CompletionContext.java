@@ -355,6 +355,8 @@ public class CompletionContext {
             logger.debug("Cannot load unit class '{}' — missing dependency: {}", unitFqcn, e.getMessage());
             diagnostics.add("Unit class '" + unitFqcn + "' found but a dependency is missing: " + e.getMessage()
                     + ". Ensure all dependencies are compiled (mvn compile dependency:copy-dependencies).");
+        } catch (TypeNotPresentException e) {
+            logger.debug("Cannot resolve generic type in unit class '{}': {}", unitFqcn, e.getMessage());
         }
         return null;
     }
