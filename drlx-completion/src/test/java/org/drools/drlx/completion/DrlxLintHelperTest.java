@@ -28,7 +28,7 @@ class DrlxLintHelperTest {
         String text = """
                 rule R1 {
                     var $p : /persons[ age > 18 ],
-                    do { System.out.println($p); }
+                    fn { System.out.println($p); }
                 }
                 """;
         assertThat(DrlxLintHelper.lint(text)).isEmpty();
@@ -39,7 +39,7 @@ class DrlxLintHelperTest {
         String text = """
                 rule R1 {
                     var $p = /persons[ age > 18,
-                    do { }
+                    fn { }
                 }
                 """;
         List<Diagnostic> diags = DrlxLintHelper.lint(text);
@@ -60,7 +60,7 @@ class DrlxLintHelperTest {
         String text = """
                 rule R1 {
                     var $p = /persons] age > 18,
-                    do { }
+                    fn { }
                 }
                 """;
         List<Diagnostic> diags = DrlxLintHelper.lint(text);
@@ -78,7 +78,7 @@ class DrlxLintHelperTest {
         String text = """
                 rule R1 {
                     var $p = /persons[ age > foo[ 18,
-                    do { }
+                    fn { }
                 }
                 """;
         List<Diagnostic> diags = DrlxLintHelper.lint(text);
@@ -92,7 +92,7 @@ class DrlxLintHelperTest {
         String text = """
                 rule R1 {
                     var $p = /persons[ name == "[" ],
-                    do { }
+                    fn { }
                 }
                 """;
         assertThat(DrlxLintHelper.lint(text)).isEmpty();
@@ -104,7 +104,7 @@ class DrlxLintHelperTest {
                 rule R1 {
                     // [
                     var $p = /persons[ age > 18 ],
-                    do { }
+                    fn { }
                 }
                 """;
         assertThat(DrlxLintHelper.lint(text)).isEmpty();
@@ -115,7 +115,7 @@ class DrlxLintHelperTest {
         String text = """
                 rule R1 {
                     var $p = /persons,
-                    do { int[] arr = new int[3]; }
+                    fn { int[] arr = new int[3]; }
                 }
                 """;
         assertThat(DrlxLintHelper.lint(text)).isEmpty();
@@ -127,7 +127,7 @@ class DrlxLintHelperTest {
         String text = """
                 rule R1 {
                     var $p = /persons[ age > 18,
-                    do { }
+                    fn { }
                 }
                 """;
         assertThat(DrlxLintHelper.lint(text)).isEmpty();
@@ -143,7 +143,7 @@ class DrlxLintHelperTest {
         String text = """
                 rule R1 {
                     Preson $p : /persons,
-                    do { }
+                    fn { }
                 }
                 """;
         assertThat(DrlxLintHelper.lint(text, model)).isEmpty();
@@ -163,7 +163,7 @@ class DrlxLintHelperTest {
 
                 rule R1 {
                     Preson p : /persons,
-                    do { }
+                    fn { }
                 }
                 """;
         List<Diagnostic> diags = DrlxLintHelper.lint(text, model);
@@ -192,7 +192,7 @@ class DrlxLintHelperTest {
                 rule R1 {
                     Person p : /persons[ age > 18 ],
                     var a : /persons/address,
-                    do { }
+                    fn { }
                 }
                 """;
         assertThat(DrlxLintHelper.lint(text, model)).isEmpty();
@@ -212,7 +212,7 @@ class DrlxLintHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do {
+                    fn {
                         Object o = new Preson("Alice");
                     }
                 }

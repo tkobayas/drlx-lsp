@@ -28,12 +28,12 @@ class DrlxDocumentSymbolHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { System.out.println(p); }
+                    fn { System.out.println(p); }
                 }
 
                 rule R2 {
                     var p : /persons,
-                    do { }
+                    fn { }
                 }
                 """;
 
@@ -64,12 +64,12 @@ class DrlxDocumentSymbolHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { }
+                    fn { }
                 }
 
                 rule R2 {
                     var p : /persons,
-                    do { }
+                    fn { }
                 }
                 """;
 
@@ -106,7 +106,7 @@ class DrlxDocumentSymbolHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { }
+                    fn { }
                 }
                 """;
 
@@ -130,7 +130,7 @@ class DrlxDocumentSymbolHelperTest {
                 class Foo {
                     rule R1 {
                         var p : /persons,
-                        do { }
+                        fn { }
                     }
                 }
                 """;

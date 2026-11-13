@@ -20,7 +20,7 @@ class DrlxDocCommentParserTest {
             "/** Matches high-risk patients. */\n"
             + "rule HighRisk {\n"
             + "    var p : /persons[age > 60],\n"
-            + "    do { System.out.println(p); }\n"
+            + "    fn { System.out.println(p); }\n"
             + "}\n";
 
         Map<String, String> docs = DrlxDocCommentParser.parseDocs(drlx);
@@ -65,7 +65,7 @@ class DrlxDocCommentParserTest {
             + "@Salience(10)\n"
             + "rule HighPriority {\n"
             + "    var p : /persons,\n"
-            + "    do { System.out.println(p); }\n"
+            + "    fn { System.out.println(p); }\n"
             + "}\n";
 
         Map<String, String> docs = DrlxDocCommentParser.parseDocs(drlx);
@@ -92,13 +92,13 @@ class DrlxDocCommentParserTest {
             "/** Doc for R1. */\n"
             + "rule R1 {\n"
             + "    var p : /persons,\n"
-            + "    do { System.out.println(p); }\n"
+            + "    fn { System.out.println(p); }\n"
             + "}\n"
             + "\n"
             + "/** Doc for R2. */\n"
             + "rule R2 {\n"
             + "    var p : /persons,\n"
-            + "    do { System.out.println(p); }\n"
+            + "    fn { System.out.println(p); }\n"
             + "}\n";
 
         Map<String, String> docs = DrlxDocCommentParser.parseDocs(drlx);
@@ -116,7 +116,7 @@ class DrlxDocCommentParserTest {
             + "**************************/\n"
             + "rule R1 {\n"
             + "    var p : /persons,\n"
-            + "    do { System.out.println(p); }\n"
+            + "    fn { System.out.println(p); }\n"
             + "}\n";
 
         assertThat(DrlxDocCommentParser.parseDocs(drlx)).isEmpty();
@@ -135,7 +135,7 @@ class DrlxDocCommentParserTest {
             + "/** Real doc for R1. */\n"
             + "rule R1 {\n"
             + "    var p : /persons,\n"
-            + "    do { System.out.println(p); }\n"
+            + "    fn { System.out.println(p); }\n"
             + "}\n";
 
         Map<String, String> docs = DrlxDocCommentParser.parseDocs(drlx);
@@ -153,7 +153,7 @@ class DrlxDocCommentParserTest {
             + " */\n"
             + "rule MultiLine {\n"
             + "    var p : /persons,\n"
-            + "    do { System.out.println(p); }\n"
+            + "    fn { System.out.println(p); }\n"
             + "}\n";
 
         Map<String, String> docs = DrlxDocCommentParser.parseDocs(drlx);
@@ -164,13 +164,13 @@ class DrlxDocCommentParserTest {
 
     @Test
     void emptyDocBodyIsSkipped() {
-        String drlx = "/** */\nrule R1 {\n    var p : /persons,\n    do { System.out.println(p); }\n}\n";
+        String drlx = "/** */\nrule R1 {\n    var p : /persons,\n    fn { System.out.println(p); }\n}\n";
         assertThat(DrlxDocCommentParser.parseDocs(drlx)).isEmpty();
     }
 
     @Test
     void docConvenienceLookup() {
-        String drlx = "/** Hello. */\nrule Foo {\n    var p : /persons,\n    do { System.out.println(p); }\n}\n";
+        String drlx = "/** Hello. */\nrule Foo {\n    var p : /persons,\n    fn { System.out.println(p); }\n}\n";
         assertThat(DrlxDocCommentParser.docFor(drlx, "Foo")).isEqualTo("Hello.");
         assertThat(DrlxDocCommentParser.docFor(drlx, "Bar")).isNull();
         assertThat(DrlxDocCommentParser.docFor(null, "Foo")).isNull();

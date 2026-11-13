@@ -56,7 +56,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var a : /as,
-                    do { System.
+                    fn { System.
                 """;
 
         Position caretPosition = new Position();
@@ -74,7 +74,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var a : /as,
-                    do { System.out.
+                    fn { System.out.
                 """;
 
         Position caretPosition = new Position();
@@ -112,7 +112,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var a : /as,
-                    do {
+                    fn {
                         Object list = new Object();
                         list#ArrayList#.
                 """;
@@ -135,7 +135,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var a : /as,
-                    do { 10.5B.
+                    fn { 10.5B.
                 """;
 
         Position caretPosition = new Position();
@@ -158,7 +158,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p.
+                    fn { p.
                 """;
 
         Position caretPosition = new Position();
@@ -180,7 +180,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var p : /persons,
-                    do {
+                    fn {
                         var addr = p.getAddress();
                         addr.
                 """;
@@ -201,7 +201,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var total = sum(/persons.age),
-                    do { total.
+                    fn { total.
                 """;
 
         Position caretPosition = new Position();
@@ -220,7 +220,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     Long total = count(/persons),
-                    do { total.
+                    fn { total.
                 """;
 
         Position caretPosition = new Position();
@@ -239,7 +239,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var cnt = count(/persons),
-                    do { cnt.
+                    fn { cnt.
                 """;
 
         Position caretPosition = new Position();
@@ -307,7 +307,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var p : /persons[$addr : address],
-                    do { $addr.
+                    fn { $addr.
                 """;
 
         Position caretPosition = new Position();
@@ -329,7 +329,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var p : /persons/address[$c : city],
-                    do { $c.
+                    fn { $c.
                 """;
 
         Position caretPosition = new Position();
@@ -350,7 +350,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var p : /persons[$n : name],
-                    do { $n.
+                    fn { $n.
                 """;
 
         Position caretPosition = new Position();
@@ -371,7 +371,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var a : /as,
-                    do {
+                    fn {
                         Object obj = new Object();
                         obj#
                 """;
@@ -395,7 +395,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { Person p2 = new\s
+                    fn { Person p2 = new\s
                 """;
 
         Position caretPosition = new Position();
@@ -435,7 +435,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule R1 {
                     var a : /as,
-                    do {
+                    fn {
                         Person p = new Person("John", 0, new Address("Tokyo"));
                         p.address.
                 """;
@@ -460,7 +460,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
 
                 rule personsByAge(int minAge, Person result) {
                     Person p : /persons[age >= minAge],
-                    do { result = p; }
+                    fn { result = p; }
                 }
 
                 rule R1 {
@@ -484,7 +484,7 @@ class DrlxCompletionHelperIncompleteCodeTest {
                 @
                 rule R1 {
                     var p : /persons,
-                    do { System.out.println(p); }
+                    fn { System.out.println(p); }
                 }
                 """;
 

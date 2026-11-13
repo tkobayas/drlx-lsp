@@ -46,7 +46,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do { System.
+                    fn { System.
                 """;
         assertResolvesTo(text, 4, 16, "java.lang.System");
     }
@@ -58,7 +58,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do { System.out.
+                    fn { System.out.
                 """;
         assertResolvesTo(text, 4, 20, "java.io.PrintStream");
     }
@@ -70,7 +70,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do { 10.5B.
+                    fn { 10.5B.
                 """;
         assertResolvesTo(text, 4, 15, "java.math.BigDecimal");
     }
@@ -85,7 +85,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do {
+                    fn {
                         Person p = new Person("John", 0, new Address("Tokyo"));
                         p.address.
                 """;
@@ -101,7 +101,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do {
+                    fn {
                         Object list = new Object();
                         list#ArrayList#.
                 """;
@@ -115,7 +115,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do { System.
+                    fn { System.
                     invalid broken {{ code
                 """;
         assertResolvesTo(text, 4, 16, "java.lang.System");
@@ -131,7 +131,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do { p.address.
+                    fn { p.address.
                 """;
 
         ResolvedReferenceTypeDeclaration personDecl =
@@ -167,7 +167,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do {
+                    fn {
                         List list = new ArrayList();
                         list.get(0).
                 """;
@@ -184,7 +184,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do {
+                    fn {
                         Person p = new Person("John", 0, new Address("Tokyo"));
                         p!.address!.
                 """;
@@ -198,7 +198,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do {
+                    fn {
                         String[] arr = new String[]{"a","b"};
                         arr[0].
                 """;
@@ -212,12 +212,12 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do { System.out.
+                    fn { System.out.
                 }
 
                 rule R2 {
                     var b : /bs,
-                    do { System.out.println("hello"); }
+                    fn { System.out.println("hello"); }
                 }
                 """;
         assertResolvesTo(text, 4, 20, "java.io.PrintStream");
@@ -230,7 +230,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var a : /as,
-                    do { list#java.util.ArrayList#.
+                    fn { list#java.util.ArrayList#.
                 """;
         assertResolvesTo(text, 4, 35, "java.util.ArrayList");
     }
@@ -247,7 +247,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p.
+                    fn { p.
                 """;
         assertResolvesToWithSymbols(text, 7, 11, "org.drools.drlx.domain.Person");
     }
@@ -261,7 +261,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     Person p : /persons,
-                    do { p.
+                    fn { p.
                 """;
         assertResolvesToWithSymbols(text, 6, 11, "org.drools.drlx.domain.Person");
     }
@@ -276,12 +276,12 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     Person p : /persons,
-                    do { p.
+                    fn { p.
                 }
 
                 rule R2 {
                     Address a : /addresses,
-                    do { a.getCity(); }
+                    fn { a.getCity(); }
                 }
                 """;
         Optional<SemanticType> result = resolveAtWithVisibleSymbols(text, 7, 11);
@@ -299,7 +299,7 @@ class ExpressionTypeResolverCharacterizationTest {
 
                 rule R1 {
                     Person p : /persons,
-                    do {
+                    fn {
                         Address p = new Address();
                         p.
                 """;

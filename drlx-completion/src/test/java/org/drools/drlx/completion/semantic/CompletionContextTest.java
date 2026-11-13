@@ -19,11 +19,11 @@ class CompletionContextTest {
             rule FindAdults {
                 Person p : /persons[age >= 18],
                 Address a : /addresses,
-                do { System.out.println(p); }
+                fn { System.out.println(p); }
             }
             rule FindChildren(String name) {
                 Person p : /persons[age < 18],
-                do { System.out.println(p); }
+                fn { System.out.println(p); }
             }
             """;
 

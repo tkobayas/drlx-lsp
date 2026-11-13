@@ -28,10 +28,10 @@ class DrlxHoverHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
-        // "p" in "do { p }" — line 7 after stripping, char 9
+        // "p" in "fn { p }" — line 7 after stripping, char 9
         Hover hover = DrlxHoverHelper.hover(text, new Position(7, 9), model);
 
         String md = content(hover);
@@ -50,7 +50,7 @@ class DrlxHoverHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { System.out.println(p); }
+                    fn { System.out.println(p); }
                 }
                 """;
         // "p" in "println(p)" — line 6, char 28
@@ -71,7 +71,7 @@ class DrlxHoverHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { unknown }
+                    fn { unknown }
                 }
                 """;
         // "unknown" — line 7, char 9
@@ -86,7 +86,7 @@ class DrlxHoverHelperTest {
                 unit MyUnit;
                 rule R1 {
                     var p : /persons,
-                    do { }
+                    fn { }
                 }
                 """;
         // "rule" keyword — line 2, char 0
@@ -105,7 +105,7 @@ class DrlxHoverHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p.address }
+                    fn { p.address }
                 }
                 """;
         // "address" in "p.address" — line 8, char 11
@@ -129,7 +129,7 @@ class DrlxHoverHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p.address.city }
+                    fn { p.address.city }
                 }
                 """;
         // "city" in "p.address.city" — line 8, char 19
@@ -153,10 +153,10 @@ class DrlxHoverHelperTest {
 
                 rule R1 {
                     var p : /persons[addr : address],
-                    do { addr }
+                    fn { addr }
                 }
                 """;
-        // "addr" in "do { addr }" — line 8, char 9
+        // "addr" in "fn { addr }" — line 8, char 9
         Hover hover = DrlxHoverHelper.hover(text, new Position(8, 9), model);
 
         String md = content(hover);
@@ -174,7 +174,7 @@ class DrlxHoverHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do {
+                    fn {
                         Address x = p.getAddress();
                         x
                     }
@@ -197,7 +197,7 @@ class DrlxHoverHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { }
+                    fn { }
                 }
                 """;
         // "Person" in import — line 0, char 30

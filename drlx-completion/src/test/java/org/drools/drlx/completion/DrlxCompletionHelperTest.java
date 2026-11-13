@@ -28,7 +28,7 @@ class DrlxCompletionHelperTest {
 
                 rule R1 {
                     var a : /as,
-                    do { System.out.println(a == 3.2B);}
+                    fn { System.out.println(a == 3.2B);}
                 }
                 """;
 
@@ -124,12 +124,12 @@ class DrlxCompletionHelperTest {
 
                 rule R1 {
                     var a : /as,
-                    do { System.out.println(a);}
+                    fn { System.out.println(a);}
                 }
 
                 rule R2 {
                     var b : /bs,
-                    do { System.out.println(b);}
+                    fn { System.out.println(b);}
                 }
                 """;
 

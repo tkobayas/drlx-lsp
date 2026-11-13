@@ -26,7 +26,7 @@ class DrlxReferencesHelperTest {
         // Line 4:
         // Line 5: rule R1 {
         // Line 6:     var p : /persons,
-        // Line 7:     do { p }
+        // Line 7:     fn { p }
         // Line 8: }
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -36,16 +36,16 @@ class DrlxReferencesHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
-        // Cursor on "p" in "do { p }" — line 7, char 9
+        // Cursor on "p" in "fn { p }" — line 7, char 9
         List<Location> refs = DrlxReferencesHelper.references(URI, text, new Position(7, 9), model, true);
 
         assertThat(refs).hasSize(2);
         // Declaration: "p" in "var p : /persons" — line 6
         assertThat(refs).anyMatch(loc -> loc.getRange().getStart().getLine() == 6);
-        // Usage: "p" in "do { p }" — line 7
+        // Usage: "p" in "fn { p }" — line 7
         assertThat(refs).anyMatch(loc -> loc.getRange().getStart().getLine() == 7);
     }
 
@@ -59,10 +59,10 @@ class DrlxReferencesHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
-        // Cursor on "p" in "do { p }" — line 7, char 9
+        // Cursor on "p" in "fn { p }" — line 7, char 9
         List<Location> refs = DrlxReferencesHelper.references(URI, text, new Position(7, 9), model, false);
 
         assertThat(refs).hasSize(1);
@@ -80,7 +80,7 @@ class DrlxReferencesHelperTest {
         // Line 5:
         // Line 6: rule R1 {
         // Line 7:     var p : /persons[$addr : address],
-        // Line 8:     do { $addr }
+        // Line 8:     fn { $addr }
         // Line 9: }
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -91,10 +91,10 @@ class DrlxReferencesHelperTest {
 
                 rule R1 {
                     var p : /persons[$addr : address],
-                    do { $addr }
+                    fn { $addr }
                 }
                 """;
-        // Cursor on "$addr" in "do { $addr }" — line 8, char 9
+        // Cursor on "$addr" in "fn { $addr }" — line 8, char 9
         List<Location> refs = DrlxReferencesHelper.references(URI, text, new Position(8, 9), model, true);
 
         assertThat(refs).hasSize(2);
@@ -110,7 +110,7 @@ class DrlxReferencesHelperTest {
         // Line 3: unit MyUnit;
         // Line 4:
         // Line 5: rule R1(Person p) {
-        // Line 6:     do { p }
+        // Line 6:     fn { p }
         // Line 7: }
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -119,10 +119,10 @@ class DrlxReferencesHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { p }
+                    fn { p }
                 }
                 """;
-        // Cursor on "p" in "do { p }" — line 6, char 9
+        // Cursor on "p" in "fn { p }" — line 6, char 9
         List<Location> refs = DrlxReferencesHelper.references(URI, text, new Position(6, 9), model, true);
 
         assertThat(refs).hasSize(2);
@@ -140,7 +140,7 @@ class DrlxReferencesHelperTest {
         // Line 5:
         // Line 6: rule R1 {
         // Line 7:     var p : /persons,
-        // Line 8:     do {
+        // Line 8:     fn {
         // Line 9:         Address x = p.getAddress();
         // Line 10:        x }
         // Line 11: }
@@ -153,7 +153,7 @@ class DrlxReferencesHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do {
+                    fn {
                         Address x = p.getAddress();
                         x }
                 }
@@ -175,12 +175,12 @@ class DrlxReferencesHelperTest {
         // Line 4:
         // Line 5: rule R1 {
         // Line 6:     var p : /persons,
-        // Line 7:     do { p }
+        // Line 7:     fn { p }
         // Line 8: }
         // Line 9:
         // Line 10: rule R2 {
         // Line 11:     var p : /persons,
-        // Line 12:     do { p }
+        // Line 12:     fn { p }
         // Line 13: }
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -190,15 +190,15 @@ class DrlxReferencesHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
 
                 rule R2 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
-        // Cursor on "p" in R1's "do { p }" — line 7, char 9
+        // Cursor on "p" in R1's "fn { p }" — line 7, char 9
         List<Location> refs = DrlxReferencesHelper.references(URI, text, new Position(7, 9), model, true);
 
         assertThat(refs).hasSize(2);
@@ -214,7 +214,7 @@ class DrlxReferencesHelperTest {
         // Line 3: unit MyUnit;
         // Line 4:
         // Line 5: rule R1(Person p) {
-        // Line 6:     do { p }
+        // Line 6:     fn { p }
         // Line 7: }
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -223,7 +223,7 @@ class DrlxReferencesHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { p }
+                    fn { p }
                 }
                 """;
         // Cursor on "Person" in "rule R1(Person p)" — line 5, char 8
@@ -245,7 +245,7 @@ class DrlxReferencesHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { p }
+                    fn { p }
                 }
                 """;
         // Cursor on "Person" in "rule R1(Person p)" — line 5, char 8
@@ -265,7 +265,7 @@ class DrlxReferencesHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { p }
+                    fn { p }
                 }
                 """;
         // Cursor on "rule" keyword — line 5, char 0
@@ -284,7 +284,7 @@ class DrlxReferencesHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { unknown }
+                    fn { unknown }
                 }
                 """;
         // "unknown" — line 7, char 9

@@ -34,7 +34,7 @@ class SentinelExpressionTypeResolverTest {
 
                 rule R1 {
                     var a : /as,
-                    do { System.
+                    fn { System.
                 """;
         Optional<SemanticType> result = resolveAt(text, 4, 16);
 
@@ -49,7 +49,7 @@ class SentinelExpressionTypeResolverTest {
 
                 rule R1 {
                     var a : /as,
-                    do { System.out.
+                    fn { System.out.
                 """;
         Optional<SemanticType> result = resolveAt(text, 4, 20);
 
@@ -64,7 +64,7 @@ class SentinelExpressionTypeResolverTest {
 
                 rule R1 {
                     var a : /as,
-                    do { 10.5B.
+                    fn { 10.5B.
                 """;
         Optional<SemanticType> result = resolveAt(text, 4, 15);
 

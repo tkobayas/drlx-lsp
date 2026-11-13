@@ -41,7 +41,7 @@ class DrlxCompletionHelperNewConstructsTest {
                 }
                 rule R1 {
                     var o : /orders,
-                    do { System.out.println(o); }
+                    fn { System.out.println(o); }
                 }
                 """;
 
@@ -77,7 +77,7 @@ class DrlxCompletionHelperNewConstructsTest {
                 @Timer(5s)
                 rule R1 {
                     var a : /persons,
-                    do { System.out.println(a); }
+                    fn { System.out.println(a); }
                 }
                 """;
 
@@ -96,7 +96,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule findPerson(String name) {
                     var p : /persons[name == name],
-                    do { System.out.println(p); }
+                    fn { System.out.println(p); }
                 }
                 """;
 
@@ -122,7 +122,7 @@ class DrlxCompletionHelperNewConstructsTest {
         // caret: empty line after first pattern — new rule item position
         Position caret = new Position(4, 4);
         List<String> items = completionItemStrings(helper.getCompletionItems(text, caret));
-        assertThat(items).contains("not", "exists", "and", "or", "test", "if", "match", "do", "var");
+        assertThat(items).contains("not", "exists", "and", "or", "test", "if", "match", "fn", "var");
         assertThat(items).contains("IDENTIFIER");
     }
 
@@ -139,7 +139,7 @@ class DrlxCompletionHelperNewConstructsTest {
         // caret: empty rule body — first rule item position
         Position caret = new Position(3, 4);
         List<String> items = completionItemStrings(helper.getCompletionItems(text, caret));
-        assertThat(items).contains("not", "exists", "do", "var");
+        assertThat(items).contains("not", "exists", "fn", "var");
         assertThat(items).contains("IDENTIFIER");
     }
 
@@ -151,14 +151,14 @@ class DrlxCompletionHelperNewConstructsTest {
                 rule R1 {
                     var a : /persons,
                     not /orders,
-                    do { System.out.println(a); }
+                    fn { System.out.println(a); }
                 }
                 """;
 
         // caret: |not /orders, — rule item start where CE keywords should appear
         Position caret = new Position(4, 4);
         List<String> items = completionItemStrings(helper.getCompletionItems(text, caret));
-        assertThat(items).contains("not", "exists", "if", "match", "do");
+        assertThat(items).contains("not", "exists", "if", "match", "fn");
         assertThat(items).contains("IDENTIFIER");
     }
 
@@ -172,7 +172,7 @@ class DrlxCompletionHelperNewConstructsTest {
                 rule R1 {
                     var a : /as,
                     test a.age > 18,
-                    do { System.out.println(a); }
+                    fn { System.out.println(a); }
                 }
                 """;
 
@@ -192,7 +192,7 @@ class DrlxCompletionHelperNewConstructsTest {
                 rule R1 {
                     var p : /persons,
                     match (p.status)
-                    case "active" do { System.out.println("active"); }
+                    case "active" fn { System.out.println("active"); }
                 }
                 """;
 
@@ -211,7 +211,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     var p : /persons[age > 18],
-                    do { System.out.println(p); }
+                    fn { System.out.println(p); }
                 }
                 """;
 
@@ -228,7 +228,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     var a : /persons/address[city == "Tokyo"],
-                    do { System.out.println(a); }
+                    fn { System.out.println(a); }
                 }
                 """;
 
@@ -248,7 +248,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     var o : /orders |time[5s],
-                    do { System.out.println(o); }
+                    fn { System.out.println(o); }
                 }
                 """;
 
@@ -269,7 +269,7 @@ class DrlxCompletionHelperNewConstructsTest {
                 }
                 rule R1 {
                     var o : /orders,
-                    do { System.out.println(o); }
+                    fn { System.out.println(o); }
                 }
 
                 """;
@@ -280,7 +280,7 @@ class DrlxCompletionHelperNewConstructsTest {
         assertThat(items).contains("rule");
     }
 
-    // --- Consequence (do block) inside various constructs ---
+    // --- Consequence (fn block) inside various constructs ---
 
     @Test
     void consequence_javaExpressionsOffered() {
@@ -289,11 +289,11 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     var a : /persons,
-                    do { System.out.println(a); }
+                    fn { System.out.println(a); }
                 }
                 """;
 
-        // caret: do { |System.out.println(a); }
+        // caret: fn { |System.out.println(a); }
         Position caret = new Position(4, 9);
         List<String> items = completionItemStrings(helper.getCompletionItems(text, caret));
         assertThat(items).contains("int", "var", "if");
@@ -308,7 +308,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     not /persons,
-                    do { System.out.println("no persons"); }
+                    fn { System.out.println("no persons"); }
                 }
                 """;
 
@@ -325,7 +325,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     exists /persons,
-                    do { System.out.println("persons exist"); }
+                    fn { System.out.println("persons exist"); }
                 }
                 """;
 
@@ -342,7 +342,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     not(/persons, /orders),
-                    do { System.out.println("none"); }
+                    fn { System.out.println("none"); }
                 }
                 """;
 
@@ -381,12 +381,12 @@ class DrlxCompletionHelperNewConstructsTest {
                 rule R1 {
                     var p : /persons,
                     match (p.status)
-                    case "active" do { System.out.println("active"); }
-                    case "inactive" do { System.out.println("inactive"); }
+                    case "active" fn { System.out.println("active"); }
+                    case "inactive" fn { System.out.println("inactive"); }
                 }
                 """;
 
-        // caret: |case "inactive" do { ... }
+        // caret: |case "inactive" fn { ... }
         Position caret = new Position(6, 4);
         List<CompletionItem> result = helper.getCompletionItems(text, caret);
         assertThat(result).isNotNull();
@@ -399,7 +399,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     var total : int = sum(/orders.amount),
-                    do { System.out.println(total); }
+                    fn { System.out.println(total); }
                 }
                 """;
 
@@ -416,7 +416,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     var a : ?/persons,
-                    do { System.out.println(a); }
+                    fn { System.out.println(a); }
                 }
                 """;
 
@@ -433,7 +433,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     groupBy(Person p : /persons, var key = p.department, int count = count(p)),
-                    do { System.out.println(count); }
+                    fn { System.out.println(count); }
                 }
                 """;
 
@@ -450,7 +450,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     and(/persons, /orders),
-                    do { System.out.println("both"); }
+                    fn { System.out.println("both"); }
                 }
                 """;
 
@@ -467,7 +467,7 @@ class DrlxCompletionHelperNewConstructsTest {
 
                 rule R1 {
                     var e : /events[this after[0s, 1h] $other],
-                    do { System.out.println(e); }
+                    fn { System.out.println(e); }
                 }
                 """;
 

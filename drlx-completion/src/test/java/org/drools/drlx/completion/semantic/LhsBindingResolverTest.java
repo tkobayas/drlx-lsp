@@ -16,7 +16,7 @@ class LhsBindingResolverTest {
             unit MyUnit;
             rule R {
                 var p : /persons,
-                do { p. }
+                fn { p. }
             }
             """;
 

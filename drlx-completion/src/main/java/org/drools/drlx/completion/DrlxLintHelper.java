@@ -173,8 +173,8 @@ public final class DrlxLintHelper {
             char[] chars = line.toCharArray();
 
             if (state == State.IN_PATTERN) {
-                // Check for 'do' keyword that starts consequence
-                if (line.matches(".*\\bdo\\b.*")) {
+                // Check for 'fn' keyword that starts consequence
+                if (line.matches(".*\\bfn\\b.*")) {
                     // Flush any unclosed '[' before entering consequence
                     for (int[] pos : openStack) {
                         if (result.size() < MAX_DIAGNOSTICS) {

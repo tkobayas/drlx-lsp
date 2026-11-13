@@ -18,7 +18,7 @@ class DrlxDiagnosticHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { System.out.println(p); }
+                    fn { System.out.println(p); }
                 }
                 """;
         assertThat(DrlxDiagnosticHelper.validate(text)).isEmpty();

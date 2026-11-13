@@ -24,7 +24,7 @@ class DrlxFoldingRangeHelperTest {
                 "unit MyUnit;\n"                    // 0
                 + "rule R1 {\n"                     // 1
                 + "    var p : /persons,\n"         // 2
-                + "    do {\n"                      // 3
+                + "    fn {\n"                      // 3
                 + "        System.out.println(p);\n"// 4
                 + "    }\n"                         // 5
                 + "}\n";                            // 6
@@ -45,7 +45,7 @@ class DrlxFoldingRangeHelperTest {
                 + "unit MyUnit;\n"                  // 3
                 + "rule R1 {\n"                     // 4
                 + "    var p : /persons,\n"         // 5
-                + "    do {}\n"                     // 6
+                + "    fn {}\n"                     // 6
                 + "}\n";                            // 7
 
         List<FoldingRange> ranges = DrlxFoldingRangeHelper.foldingRanges(drlx);
@@ -64,7 +64,7 @@ class DrlxFoldingRangeHelperTest {
                 + "unit MyUnit;\n"                  // 1
                 + "rule R1 {\n"                     // 2
                 + "    var p : /persons,\n"         // 3
-                + "    do {}\n"                     // 4
+                + "    fn {}\n"                     // 4
                 + "}\n";                            // 5
 
         List<FoldingRange> ranges = DrlxFoldingRangeHelper.foldingRanges(drlx);
@@ -86,7 +86,7 @@ class DrlxFoldingRangeHelperTest {
                 + "    /* inline block\n"           // 6
                 + "       comment */\n"             // 7
                 + "    var p : /persons,\n"         // 8
-                + "    do {}\n"                     // 9
+                + "    fn {}\n"                     // 9
                 + "}\n";                            // 10
 
         List<FoldingRange> ranges = DrlxFoldingRangeHelper.foldingRanges(drlx);
@@ -110,7 +110,7 @@ class DrlxFoldingRangeHelperTest {
                 + "rule R1 {\n"                     // 5
                 + "    // isolated single line\n"   // 6
                 + "    var p : /persons,\n"         // 7
-                + "    do {}\n"                     // 8
+                + "    fn {}\n"                     // 8
                 + "}\n";                            // 9
 
         List<FoldingRange> ranges = DrlxFoldingRangeHelper.foldingRanges(drlx);

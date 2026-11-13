@@ -63,7 +63,7 @@ class DrlxLspDocumentServiceTest {
                 class Foo {
                     rule R1 {
                         var a : /as,
-                        do { System.out.println(a == 3.2B);}
+                        fn { System.out.println(a == 3.2B);}
                     }
                 }
                 """;
@@ -93,7 +93,7 @@ class DrlxLspDocumentServiceTest {
         result = drlxLspDocumentService.getCompletionItems(completionParams);
         assertThat(completionItemStrings(result)).doesNotContain("IDENTIFIER");
 
-        // Test completion inside do block
+        // Test completion inside fn block
         completionParams.setPosition(new Position(3, 12));
         result = drlxLspDocumentService.getCompletionItems(completionParams);
         assertThat(result).isNotEmpty();
@@ -107,12 +107,12 @@ class DrlxLspDocumentServiceTest {
                 class Foo {
                     rule R1 {
                         var a : /as,
-                        do { System.out.println(a);}
+                        fn { System.out.println(a);}
                     }
                     
                     rule R2 {
                         var b : /bs,
-                        do { System.out.println(b);}
+                        fn { System.out.println(b);}
                     }
                 }
                 """;
@@ -143,7 +143,7 @@ class DrlxLspDocumentServiceTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p.
+                    fn { p.
                 """;
 
         DrlxLspDocumentService drlxLspDocumentService = getDrlxLspDocumentService(drlx);
@@ -185,7 +185,7 @@ class DrlxLspDocumentServiceTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
 
@@ -213,7 +213,7 @@ class DrlxLspDocumentServiceTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
 
@@ -221,7 +221,7 @@ class DrlxLspDocumentServiceTest {
 
         DefinitionParams params = new DefinitionParams();
         params.setTextDocument(new TextDocumentIdentifier("myDocument"));
-        params.setPosition(new Position(7, 9)); // "p" in "do { p }"
+        params.setPosition(new Position(7, 9)); // "p" in "fn { p }"
 
         Either<List<? extends Location>, List<? extends LocationLink>> result = service.definition(params).get();
 
@@ -239,7 +239,7 @@ class DrlxLspDocumentServiceTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
 
@@ -247,7 +247,7 @@ class DrlxLspDocumentServiceTest {
 
         ReferenceParams params = new ReferenceParams();
         params.setTextDocument(new TextDocumentIdentifier("myDocument"));
-        params.setPosition(new Position(7, 9)); // "p" in "do { p }"
+        params.setPosition(new Position(7, 9)); // "p" in "fn { p }"
         params.setContext(new ReferenceContext(true));
 
         List<? extends Location> refs = service.references(params).get();
@@ -266,12 +266,12 @@ class DrlxLspDocumentServiceTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { System.out.println(p); }
+                    fn { System.out.println(p); }
                 }
 
                 rule R2 {
                     var p : /persons,
-                    do { }
+                    fn { }
                 }
                 """;
 
@@ -305,7 +305,7 @@ class DrlxLspDocumentServiceTest {
                 + "unit MyUnit;\n"                  // 5
                 + "rule R1 {\n"                     // 6
                 + "    var p : /persons,\n"         // 7
-                + "    do {\n"                      // 8
+                + "    fn {\n"                      // 8
                 + "        System.out.println(p);\n"// 9
                 + "    }\n"                         // 10
                 + "}\n";                            // 11
@@ -333,7 +333,7 @@ class DrlxLspDocumentServiceTest {
                 + "unit MyUnit;\n"                             // 2
                 + "rule R1 {\n"                                // 3
                 + "    var p = /persons,\n"                    // 4
-                + "    do {\n"                                 // 5
+                + "    fn {\n"                                 // 5
                 + "        var x = \"abc\";\n"                 // 6
                 + "    }\n"                                    // 7
                 + "}\n";                                       // 8
@@ -358,7 +358,7 @@ class DrlxLspDocumentServiceTest {
         String drlx = """
                 rule R1 {
                     var $p = /persons[ age > 18,
-                    do { }
+                    fn { }
                 }
                 """;
 
@@ -381,7 +381,7 @@ class DrlxLspDocumentServiceTest {
 
                 rule R1 {
                     Preson p : /persons,
-                    do { }
+                    fn { }
                 }
                 """;
 

@@ -29,7 +29,7 @@ class DrlxRenameHelperTest {
         // Line 4:
         // Line 5: rule R1 {
         // Line 6:     var p : /persons,
-        // Line 7:     do { p }
+        // Line 7:     fn { p }
         // Line 8: }
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -39,7 +39,7 @@ class DrlxRenameHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
         // Cursor on "p" in "var p : /persons" — line 6, char 8
@@ -63,7 +63,7 @@ class DrlxRenameHelperTest {
         // Line 5:
         // Line 6: rule R1 {
         // Line 7:     var p : /persons[$addr : address],
-        // Line 8:     do { $addr }
+        // Line 8:     fn { $addr }
         // Line 9: }
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -74,10 +74,10 @@ class DrlxRenameHelperTest {
 
                 rule R1 {
                     var p : /persons[$addr : address],
-                    do { $addr }
+                    fn { $addr }
                 }
                 """;
-        // Cursor on "$addr" in "do { $addr }" — line 8, char 9
+        // Cursor on "$addr" in "fn { $addr }" — line 8, char 9
         DrlxRenameHelper.PreparedRename result =
                 DrlxRenameHelper.prepare(URI, text, new Position(8, 9), model);
 
@@ -95,7 +95,7 @@ class DrlxRenameHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { p }
+                    fn { p }
                 }
                 """;
         // Cursor on "Person" in "rule R1(Person p)" — line 5, char 8
@@ -115,7 +115,7 @@ class DrlxRenameHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
         // Cursor on "rule" keyword — line 5, char 0
@@ -141,7 +141,7 @@ class DrlxRenameHelperTest {
         // Line 4:
         // Line 5: rule R1 {
         // Line 6:     var p : /persons,
-        // Line 7:     do { p }
+        // Line 7:     fn { p }
         // Line 8: }
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -151,10 +151,10 @@ class DrlxRenameHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
-        // Cursor on "p" in "do { p }" — line 7, char 9
+        // Cursor on "p" in "fn { p }" — line 7, char 9
         WorkspaceEdit edit =
                 DrlxRenameHelper.rename(URI, text, new Position(7, 9), "person", model);
 
@@ -175,7 +175,7 @@ class DrlxRenameHelperTest {
 
                 rule R1 {
                     var p : /persons[$addr : address],
-                    do { $addr }
+                    fn { $addr }
                 }
                 """;
         // Cursor on "$addr" — line 8, char 9; newName with $
@@ -199,7 +199,7 @@ class DrlxRenameHelperTest {
 
                 rule R1 {
                     var p : /persons[$addr : address],
-                    do { $addr }
+                    fn { $addr }
                 }
                 """;
         // Cursor on "$addr" — line 8, char 9; newName without $ — used as-is
@@ -223,7 +223,7 @@ class DrlxRenameHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do {
+                    fn {
                         Address x = p.getAddress();
                         x }
                 }
@@ -248,15 +248,15 @@ class DrlxRenameHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
 
                 rule R2 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
-        // Cursor on "p" in R1's "do { p }" — line 7, char 9
+        // Cursor on "p" in R1's "fn { p }" — line 7, char 9
         WorkspaceEdit edit =
                 DrlxRenameHelper.rename(URI, text, new Position(7, 9), "person", model);
 
@@ -277,7 +277,7 @@ class DrlxRenameHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { p }
+                    fn { p }
                 }
                 """;
         // Cursor on "Person" — line 5, char 8
@@ -297,7 +297,7 @@ class DrlxRenameHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
         assertThat(DrlxRenameHelper.rename(URI, text, new Position(7, 9), "123abc", model)).isNull();
@@ -314,7 +314,7 @@ class DrlxRenameHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
         assertThat(DrlxRenameHelper.rename(URI, text, new Position(7, 9), "", model)).isNull();

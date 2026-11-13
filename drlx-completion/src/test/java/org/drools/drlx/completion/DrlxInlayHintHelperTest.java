@@ -27,7 +27,7 @@ class DrlxInlayHintHelperTest {
 
                 rule R1 {
                     var p : /persons[ a : age, n : name ],
-                    do {}
+                    fn {}
                 }
                 """;
         List<InlayHint> hints = DrlxInlayHintHelper.inlayHints(drlx, null, model);
@@ -55,7 +55,7 @@ class DrlxInlayHintHelperTest {
 
                 rule R1 {
                     var cnt = count(/persons),
-                    do {}
+                    fn {}
                 }
                 """;
         List<InlayHint> hints = DrlxInlayHintHelper.inlayHints(drlx, null, model);
@@ -77,7 +77,7 @@ class DrlxInlayHintHelperTest {
                 unit MyUnit;
 
                 rule R1 {
-                    do {
+                    fn {
                         var msg = "hello";
                     }
                 }
@@ -102,7 +102,7 @@ class DrlxInlayHintHelperTest {
 
                 rule R1 {
                     Person p : /persons,
-                    do {
+                    fn {
                         String s = "world";
                     }
                 }
@@ -121,12 +121,12 @@ class DrlxInlayHintHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do {}
+                    fn {}
                 }
 
                 rule R2 {
                     var q : /persons,
-                    do {}
+                    fn {}
                 }
                 """;
         // Request range only covering R1 (lines 5 to 9)

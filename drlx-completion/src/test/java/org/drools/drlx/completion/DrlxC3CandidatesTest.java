@@ -39,14 +39,14 @@ class DrlxC3CandidatesTest {
                 not /orders,
                 exists /orders,
                 test p1.age > 18,
-                do {
+                fn {
                     System.out.println(p1);
                 }
             }
 
             rule R2(String name) {
                 var p : /persons[name == name],
-                do { System.out.println(p); }
+                fn { System.out.println(p); }
             }
             """;
 
@@ -116,7 +116,7 @@ class DrlxC3CandidatesTest {
     void beforeRule() {
         CandidateResult r = collectAt(TEXT, 2, 0);
         assertThat(tokenNames(r)).contains("rule", "window");
-        assertThat(tokenNames(r)).doesNotContain("not", "exists", "do");
+        assertThat(tokenNames(r)).doesNotContain("not", "exists", "fn");
         assertThat(siteAt(r)).isEqualTo(COMPILATION_UNIT);
     }
 
@@ -138,7 +138,7 @@ class DrlxC3CandidatesTest {
     void boundType() {
         // At 'Person' in 'Person p1 : /persons[...],'
         CandidateResult r = collectAt(TEXT, 3, 4);
-        assertThat(tokenNames(r)).contains("not", "exists", "and", "or", "test", "if", "match", "do", "var");
+        assertThat(tokenNames(r)).contains("not", "exists", "and", "or", "test", "if", "match", "fn", "var");
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("ruleItem", "boundOopath");
@@ -209,7 +209,7 @@ class DrlxC3CandidatesTest {
     void ruleItemStart_beforeNot() {
         // At 'not' — rule item start where CE keywords should appear
         CandidateResult r = collectAt(TEXT, 5, 4);
-        assertThat(tokenNames(r)).contains("not", "exists", "and", "or", "test", "if", "match", "do", "var");
+        assertThat(tokenNames(r)).contains("not", "exists", "and", "or", "test", "if", "match", "fn", "var");
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(ruleCallStack(r, DrlxParser.RULE_identifier))
                 .contains("ruleItem", "boundOopath");
@@ -220,7 +220,7 @@ class DrlxC3CandidatesTest {
     void ruleItemStart_beforeExists() {
         // At 'exists' — same position type as before 'not'
         CandidateResult r = collectAt(TEXT, 6, 4);
-        assertThat(tokenNames(r)).contains("not", "exists", "do");
+        assertThat(tokenNames(r)).contains("not", "exists", "fn");
         assertThat(hasRule(r, DrlxParser.RULE_identifier)).isTrue();
         assertThat(siteAt(r)).isEqualTo(RULE_ITEM);
     }
@@ -242,7 +242,7 @@ class DrlxC3CandidatesTest {
 
     @Test
     void consequenceBlock() {
-        // At 'System' inside 'do { ... }'
+        // At 'System' inside 'fn { ... }'
         CandidateResult r = collectAt(TEXT, 9, 8);
         assertThat(tokenNames(r)).contains("if", "var", "for", "while", "return");
         assertThat(tokenNames(r)).doesNotContain("rule", "window");

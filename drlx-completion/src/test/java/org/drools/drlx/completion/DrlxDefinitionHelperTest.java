@@ -31,10 +31,10 @@ class DrlxDefinitionHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
-        // "p" in "do { p }" — line 7, char 9
+        // "p" in "fn { p }" — line 7, char 9
         List<Location> defs = DrlxDefinitionHelper.definition(URI, text, new Position(7, 9), model);
 
         assertThat(defs).hasSize(1);
@@ -55,10 +55,10 @@ class DrlxDefinitionHelperTest {
 
                 rule R1 {
                     var p : /persons[$addr : address],
-                    do { $addr }
+                    fn { $addr }
                 }
                 """;
-        // "$addr" in "do { $addr }" — line 8, char 9
+        // "$addr" in "fn { $addr }" — line 8, char 9
         List<Location> defs = DrlxDefinitionHelper.definition(URI, text, new Position(8, 9), model);
 
         assertThat(defs).hasSize(1);
@@ -74,7 +74,7 @@ class DrlxDefinitionHelperTest {
         // Line 3: unit MyUnit;
         // Line 4:
         // Line 5: rule R1(Person p) {
-        // Line 6:     do { p }
+        // Line 6:     fn { p }
         // Line 7: }
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -83,10 +83,10 @@ class DrlxDefinitionHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { p }
+                    fn { p }
                 }
                 """;
-        // "p" in "do { p }" — line 6, char 9
+        // "p" in "fn { p }" — line 6, char 9
         List<Location> defs = DrlxDefinitionHelper.definition(URI, text, new Position(6, 9), model);
 
         assertThat(defs).hasSize(1);
@@ -105,7 +105,7 @@ class DrlxDefinitionHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do {
+                    fn {
                         Address x = p.getAddress();
                         x }
                 }
@@ -128,7 +128,7 @@ class DrlxDefinitionHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { p }
+                    fn { p }
                 }
                 """;
         // Cursor on "p" in "var p : /persons" — line 6, char 8 (the definition itself)
@@ -146,7 +146,7 @@ class DrlxDefinitionHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { p }
+                    fn { p }
                 }
                 """;
         // Cursor on "rule" keyword — line 5, char 0
@@ -165,7 +165,7 @@ class DrlxDefinitionHelperTest {
 
                 rule R1 {
                     var p : /persons,
-                    do { unknown }
+                    fn { unknown }
                 }
                 """;
         // "unknown" — line 7, char 9
@@ -182,7 +182,7 @@ class DrlxDefinitionHelperTest {
         // Line 3: unit MyUnit;
         // Line 4:
         // Line 5: rule R1(Person p) {
-        // Line 6:     do { p }
+        // Line 6:     fn { p }
         // Line 7: }
         String text = """
                 import org.drools.drlx.domain.Person;
@@ -191,7 +191,7 @@ class DrlxDefinitionHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { p }
+                    fn { p }
                 }
                 """;
         // Cursor on "Person" in "rule R1(Person p)" — line 5, char 8
@@ -211,7 +211,7 @@ class DrlxDefinitionHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { p }
+                    fn { p }
                 }
                 """;
         // Cursor on "Person" in the import line — line 0
@@ -245,16 +245,16 @@ class DrlxDefinitionHelperTest {
         // Line 0: import org.example.Pet;
         // Line 1:
         // Line 2: rule R1 {
-        // Line 3:     do { Pet }
+        // Line 3:     fn { Pet }
         // Line 4: }
         String text = """
                 import org.example.Pet;
 
                 rule R1 {
-                    do { Pet }
+                    fn { Pet }
                 }
                 """;
-        // "Pet" in "do { Pet }" — line 3, char 9
+        // "Pet" in "fn { Pet }" — line 3, char 9
         List<Location> defs = DrlxDefinitionHelper.definition(URI, text, new Position(3, 9), testModel);
 
         assertThat(defs).hasSize(1);
@@ -283,7 +283,7 @@ class DrlxDefinitionHelperTest {
                 import org.example.Pet;
 
                 rule R1 {
-                    do { Pet }
+                    fn { Pet }
                 }
                 """;
         // "Pet" on the import line — line 0, char 19
@@ -306,7 +306,7 @@ class DrlxDefinitionHelperTest {
                 unit MyUnit;
 
                 rule R1(Person p) {
-                    do { p }
+                    fn { p }
                 }
                 """;
         // "Person" in "rule R1(Person p)" — line 5, char 8
@@ -325,7 +325,7 @@ class DrlxDefinitionHelperTest {
         // and with no import match, result is empty.
         String text = """
                 rule R1 {
-                    do { String }
+                    fn { String }
                 }
                 """;
         // "String" — line 1, char 9
